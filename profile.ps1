@@ -45,7 +45,9 @@ Set-Alias -Name work -Value Find-Work -Description "if not work, create, goto wo
 ##### Git functions #####
 # repo - Function to navigate to or create and navigate to the git repositories folder
 function Find-GitRepo {
-    if (-not (Test-Path $gitRepos -ea 0)) {New-Item -Path "$gitRepos" -ItemType Directory -Force}
+    if (-not (Test-Path $gitRepos -ea 0)) {
+        New-Item -Path "$gitRepos" -ItemType Directory -Force
+    }
     Push-Location -Path $gitRepos
 }
 Set-Alias -Name repo -Value Find-GitRepo -Description "if not repo, create, goto repo" -ErrorAction SilentlyContinue
@@ -64,7 +66,11 @@ function Find-Pattern ($pattern) {$input | Out-String -Stream | Select-String $p
 Set-Alias -Name grep -Value Find-Pattern -Description 'grep - find $pattern from $input' -ErrorAction SilentlyContinue
 
 # touch - Function to create a new file if it does not exist
-function New-File ($file) {if (-not (Test-Path $file -ea 0)) {New-Item -Path "$file" -Force -ItemType File}}
+function New-File ($file) {
+    if (-not (Test-Path $file -ea 0)) {
+        New-Item -Path "$file" -Force -ItemType File
+    }
+}
 Set-Alias -Name touch -Value New-File -Description 'touch - if not $file, create here' -ErrorAction SilentlyContinue
 
 # sed - Function to replace a pattern in a file
@@ -72,12 +78,16 @@ function Set-Pattern ($file,$pattern,$replace) {(Get-Content $file).replace("$pa
 Set-Alias -Name sed -Value Set-Pattern -Description 'sed - $replace a $pattern in $file' -ErrorAction SilentlyContinue
 
 # unzip - Function to expand a zip file to a folder
-function Expand-ZipToFolder ($file,$folder) {
-    if ($null -eq $folder) {$folder = New-Item -Path "$($PWD.Path)\$($file.Basename)" -ItemType Directory -Force -ea 0}
-    else {$folder = New-Item -Path $folder -ItemType Directory -Force -ea 0}
-    Expand-Archive -Path $file -DestinationPath $folder -Verbose
+function Expand-ZipToFolder ($zipFile,$zipFolder) {
+    if (-not $zipFolder) {
+        $folderName = (Get-Item $zipFile).BaseName
+        $zipFolder = New-Item -Path "$($PWD.Path)\$folderName" -ItemType Directory -Force -ea 0
+    } else {
+        $zipFolder = New-Item -Path $zipFolder -ItemType Directory -Force -ea 0
+    }
+    Expand-Archive -Path $zipFile -DestinationPath $zipFolder -Verbose
 }
-Set-Alias -Name unzip -Value Expand-ZipToFolder -Description 'unzip - $file to $folder' -ErrorAction SilentlyContinue
+Set-Alias -Name unzip -Value Expand-ZipToFolder -Description 'unzip - $zipFile to $zipFolder' -ErrorAction SilentlyContinue
 
 ##### Azure Functions ##### 
 ##### (Coming soon to a repo near you!) #####
