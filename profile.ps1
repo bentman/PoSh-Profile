@@ -73,7 +73,7 @@ Set-Alias -Name sed -Value Set-Pattern -Description 'sed - $replace a $pattern i
 # unzip - Function to expand a zip file to a folder
 function Expand-ZipToFolder ($zipFile, $zipFolder) {
     if ($zipFolder) { $zipFolder = New-Item -Path $zipFolder -ItemType Directory -Force -ea 0 }
-    else { $zip = Get-Item $zipFile; New-Item -Path "$($PWD.Path)\$($zip.BaseName)" -ItemType Directory -Force -ea 0 }
+    else { $zip = Get-Item $zipFile; $zipFolder = New-Item -Path "$($PWD.Path)\$($zip.BaseName)" -ItemType Directory -Force -ea 0 }
     Expand-Archive -Path $zipFile -DestinationPath $zipFolder -Verbose
 }
 Set-Alias -Name unzip -Value Expand-ZipToFolder -Description 'unzip - $zipFile to $zipFolder' -ea SilentlyContinue
