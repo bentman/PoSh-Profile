@@ -1,7 +1,7 @@
 ##### Personal Environment Setup #####
-$gitName = 'YourGitName'
-$workFldr = "C:\WORK" # Your Sandbox DEV Folder
-$gitRepos = "$env:USERPROFILE\github\$($gitName)\Repositories" # Your Github Repository
+$gitName = 'bentman'
+$workFldr = "d:\_WORK"
+$gitRepos = "d:\USR\GitHub\$($gitName)\Repositories"
 $gitProfile = "https://github.com/$gitName"
 $poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts
 
@@ -16,7 +16,7 @@ Write-Host "Reticulating Splines..." -ForegroundColor Yellow
 ##### Functions #####
 # edge - Function to open Microsoft Edge
 function Open-Edge { Start-Process "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe" }
-Set-Alias -Name edge -Value Open-Edge -Description "open edge as current user" -ErrorAction SilentlyContinue
+Set-Alias -Name edge -Value Open-Edge -Description "open edge as current user" -ea SilentlyContinue
 
 # myip - Function to display public IP addresses
 function Get-PublicIp {
@@ -28,18 +28,18 @@ function Get-PublicIp {
     Write-Host "`n  Checking DNS resolvers..." -ForegroundColor Green
     foreach ($dnsChk in $dnsChks) { Resolve-DnsName -Name $dnsChk }
 }
-Set-Alias -Name myip -Value Get-PublicIp -Description 'what is my public ip?' -ErrorAction SilentlyContinue
+Set-Alias -Name myip -Value Get-PublicIp -Description 'what is my public ip?' -ea SilentlyContinue
 
 # rdp - Function to start a remote desktop connection
 function Start-RDP ($systemName) { Start-Process "$env:SystemRoot\system32\mstsc.exe" -ArgumentList "/v:$systemName" }
-Set-Alias -Name rdp -Value Start-RDP -Description 'rdp computer/server' -ErrorAction SilentlyContinue
+Set-Alias -Name rdp -Value Start-RDP -Description 'rdp computer/server' -ea SilentlyContinue
 
 # work - Function to navigate to or create and navigate to the work folder
 function Find-Work {
     if (-not (Test-Path $workFldr -ea 0)) { New-Item -Path $workFldr -ItemType Directory -Force }
     Push-Location -Path $workFldr
 }
-Set-Alias -Name work -Value Find-Work -Description "if not work, create, goto work" -ErrorAction SilentlyContinue
+Set-Alias -Name work -Value Find-Work -Description "if not work, create, goto work" -ea SilentlyContinue
 
 ##### Git functions #####
 # repo - Function to navigate to or create and navigate to the git repositories folder
@@ -47,55 +47,54 @@ function Find-GitRepo {
     if (-not (Test-Path $gitRepos -ea 0)) { New-Item -Path "$gitRepos" -ItemType Directory -Force }
     Push-Location -Path $gitRepos
 }
-Set-Alias -Name repo -Value Find-GitRepo -Description "if not repo, create, goto repo" -ErrorAction SilentlyContinue
+Set-Alias -Name repo -Value Find-GitRepo -Description "if not repo, create, goto repo" -ea SilentlyContinue
 
 # gcom - Function to add all changes and commit with a message
 function Invoke-GitCommit ($message) { git add .; git commit -m $message }
-Set-Alias -Name gcom -Value Invoke-GitCommit -Description 'git commit "$message"' -ErrorAction SilentlyContinue
+Set-Alias -Name gcom -Value Invoke-GitCommit -Description 'git commit "$message"' -ea SilentlyContinue
 
 # gpush - Function to add all changes, commit with a message, and push to the remote repository
 function Invoke-GitPush ($message) { git add .; git commit -m $message; git push }
-Set-Alias -Name gpush -Value Invoke-GitPush -Description 'git commit "$message" & push' -ErrorAction SilentlyContinue
+Set-Alias -Name gpush -Value Invoke-GitPush -Description 'git commit "$message" & push' -ea SilentlyContinue
 
 ##### Linux style functions #####
 # grep - Function to find a pattern in the input
 function Find-Pattern ($pattern) { $input | Out-String -Stream | Select-String $pattern }
-Set-Alias -Name grep -Value Find-Pattern -Description 'grep - find $pattern from $input' -ErrorAction SilentlyContinue
+Set-Alias -Name grep -Value Find-Pattern -Description 'grep - find $pattern from $input' -ea SilentlyContinue
 
 # touch - Function to create a new file if it does not exist
 function New-File ($file) { if (-not (Test-Path $file -ea 0)) { New-Item -Path "$file" -Force -ItemType File } }
-Set-Alias -Name touch -Value New-File -Description 'touch - if not $file, create here' -ErrorAction SilentlyContinue
+Set-Alias -Name touch -Value New-File -Description 'touch - if not $file, create here' -ea SilentlyContinue
 
 # sed - Function to replace a pattern in a file
 function Set-Pattern ($file, $pattern, $replace) { (Get-Content $file).replace("$pattern", "$replace") | Set-Content $file }
-Set-Alias -Name sed -Value Set-Pattern -Description 'sed - $replace a $pattern in $file' -ErrorAction SilentlyContinue
+Set-Alias -Name sed -Value Set-Pattern -Description 'sed - $replace a $pattern in $file' -ea SilentlyContinue
 
 # unzip - Function to expand a zip file to a folder
 function Expand-ZipToFolder ($zipFile, $zipFolder) {
     if ($zipFolder) { $zipFolder = New-Item -Path $zipFolder -ItemType Directory -Force -ea 0 }
-    else { $zipFolder = New-Item -Path "$($PWD.Path)\$($zipFile.Basename)" -ItemType Directory -Force -ea 0 }
+    else { $zip = Get-Item $zipFile; New-Item -Path "$($PWD.Path)\$($zip.BaseName)" -ItemType Directory -Force -ea 0 }
     Expand-Archive -Path $zipFile -DestinationPath $zipFolder -Verbose
 }
+Set-Alias -Name unzip -Value Expand-ZipToFolder -Description 'unzip - $zipFile to $zipFolder' -ea SilentlyContinue
 ##### Azure Functions ##### 
 ##### (Coming soon to a repo near you!) #####
 
 ##### PoSh Environment Result #####
 # Display aliases and paths for quick reference
-Get-Alias | Where-Object { $_.Name -in @('edge', 'rdp', 'myip', 'grep', 'touch', 'sed', 'unzip') } |
-Format-Table Name, Definition, Description -AutoSize -HideTableHeaders
+(Get-Alias | Where-Object { $_.Name -in @('edge', 'rdp', 'myip', 'grep', 'touch', 'sed', 'unzip') } |
+Format-Table Name, Definition, Description -AutoSize -HideTableHeaders | Out-String).trim()
 
 # Who am I & am I running as admin?
-Write-Host "Who am I?" -ForegroundColor Yellow
+Write-Host "`nWho am I?" -ForegroundColor Yellow
 Write-Host "    $whoIsMe" -ForegroundColor Green
 Write-Host "    Running as admin?... $($amIAdmin)" 
-Write-Host ""  # Empty line for console readability
 
 # Is my stuff here?
-Write-Host "Where is my stuff?" -ForegroundColor Yellow
+Write-Host "`nWhere is my stuff?" -ForegroundColor Yellow
 Write-Host "    $(Test-Path $workFldr)... $workFldr"
 Write-Host "    $(Test-Path $gitRepos)... $gitRepos"
 Write-Host "    $(Test-Path $poShProfile.FullName)... $($poShProfile.FullName)"
-Write-Host ""  # Empty line for console readability
 
 Push-Location $workFldr
 
