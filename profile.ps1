@@ -1,9 +1,9 @@
 ##### Personal Environment Setup #####
-$gitName = 'bentman' # Your Git Name
-$workFldr = "d:\_WORK" # Your Sandbox Code Workspace
-$gitRepos = "e:\GitHub\$($gitName)\Repositories" # Your Local Github Workspace
-$gitProfile = "https://github.com/$gitName" # Your Github Repository
-$poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Your Powershell Profile
+$gitName = 'bentman' # Git Name
+$workFldr = "d:\_WORK" # Sandbox Code Workspace
+$gitRepos = "e:\GitHub\$($gitName)\Repositories" # Local Github Workspace
+$gitProfile = "https://github.com/$gitName" # Github Repository
+$poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
 
 # Set the console title based on administrative status
 $amIAdmin = [bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups -match "S-1-5-32-544")
