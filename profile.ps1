@@ -24,14 +24,9 @@ function Get-PublicIp {
     # Retrieve public IP addresses
     $pubIp4 = Invoke-RestMethod -Uri ('https://ipinfo.io/')
     $pubIp6 = (Invoke-WebRequest http://ifconfig.me/ip).Content
-    $dnsChks = @('one.one.one.one', 'dns.google')
-    Write-Host "`n  Public IP4: $($pubIp4.ip) `n  Public IP6: $($pubIp6)" -ForegroundColor Magenta
-    Write-Host "`n  Checking DNS resolvers..." -ForegroundColor Green
-    foreach ($dnsChk in $dnsChks) { 
-        (Resolve-DnsName -Name $dnsChk | Select-Object -Last 1 -First 1 | Format-Table -HideTableHeaders | Out-String).trim()
-    }
+    Write-Host "`n  Public IP4: $($pubIp4.ip) `n  Public IP6: $($pubIp6)`n" -ForegroundColor Magenta
 }
-Set-Alias -Name myip -Value Get-PublicIp -Description 'what is my public ip?' -ea 0
+Set-Alias -Name mypip -Value Get-PublicIp -Description 'what is my public ip?' -ea 0
 
 # rdp - Function to start a remote desktop connection
 function Start-RDP ($systemName) { Start-Process "$env:SystemRoot\system32\mstsc.exe" -ArgumentList "/v:$systemName" }
@@ -99,7 +94,7 @@ Set-Alias -Name tff -Value Open-TerraFiles -Description 'tff - open *.tf & *.tfv
 
 ##### PoSh Environment Result #####
 # Display aliases and paths for quick reference
-(Get-Alias | Where-Object { $_.Name -in @('edge', 'rdp', 'myip', 'grep', 'ops', 'tff', 'touch', 'sed', 'unzip') } |
+(Get-Alias | Where-Object { $_.Name -in @('edge', 'rdp', 'mypip', 'grep', 'ops', 'tff', 'touch', 'sed', 'unzip') } |
 Format-Table Name, Definition, Description -AutoSize -HideTableHeaders | Out-String).trim()
 
 # Who am I & am I running as admin?
