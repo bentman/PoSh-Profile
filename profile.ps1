@@ -90,7 +90,20 @@ function Open-TerraFiles { Get-ChildItem -Path . -Include *.tf, *.tfvars -Recurs
 Set-Alias -Name tff -Value Open-TerraFiles -Description 'tff - open *.tf & *.tfvars in vscode' -ea 0
 
 ##### Azure Functions ##### 
-##### (Coming soon to a repo near you!) #####
+$myAzTenant = 'Your-AzTenant-Id'
+$myAzSub = 'Your-AzSubscription-Id'
+$jumpWin = 'vm-windows.az-region.cloudapp.azure.com'
+$jumpLin = 'adminuser@vm-linux.az-region.cloudapp.azure.com'
+$azSshKey = "$env:OneDrive\.ssh\az-ssh-key.pem"
+
+function Connect-Azure { az login -t $myAzTenant }
+Set-Alias -Name myaz -Value Connect-Azure -Description 'use az cli to connect to tenant' -ea 0
+
+function Connect-JumpWin { Start-Process "$env:SystemRoot\system32\mstsc.exe" -ArgumentList "/v:$jumpWin" }
+Set-Alias -Name jumpwin -Value Connect-JumpWin -Description 'rdp az jumpwin' -ea 0
+
+function Connect-JumpLin { ssh "$jumpLin" -i $azSshKey = "$env:OneDrive\backup\ssh-tacocat008.pem" }
+Set-Alias -Name jumplin -Value Connect-JumpLin -Description 'ssh az jumplin' -ea 0
 
 ##### PoSh Environment Result #####
 # Display aliases and paths for quick reference
