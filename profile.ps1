@@ -104,7 +104,7 @@ function Connect-JumpWin { Start-Process "$env:SystemRoot\system32\mstsc.exe" -A
 Set-Alias -Name jumpwin -Value Connect-JumpWin -Description 'rdp az jumpwin vm' -ea 0
 
 # jumplin - Function to connect to Linux vm jumpbox
-function Connect-JumpLin { ssh "$jumpLin" -i $azSshKey = "$env:OneDrive\backup\ssh-tacocat008.pem" }
+function Connect-JumpLin { ssh $jumpLin -i $azSshKey }
 Set-Alias -Name jumplin -Value Connect-JumpLin -Description 'ssh az jumplin vm' -ea 0
 
 ##### PoSh Environment Result #####
