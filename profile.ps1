@@ -1,10 +1,10 @@
 ##### Personal Environment Setup #####
 $gitName = 'bentman' # GitHub Name
 $gitOnline = "https://GitHub.com/$($gitName)?tab=repositories" # GitHub Repository
-$gitRepos = "e:\GitHub\$($gitName)\Repositories" # Local GitHub Workspace
+$gitRepos = "d:\GitHub\$($gitName)\Repositories" # Local GitHub Workspace
 $gitProfile = "$gitRepos\PoSh-Profile\profile.ps1" # PoshProfile on GitHub Repository
 $poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
-$workFldr = "d:\_WORK" # Sandbox Code Workspace
+$workFldr = "d:\WORK" # Sandbox Code Workspace
 
 # Set the console title based on administrative status
 $amIAdmin = [bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups -match "S-1-5-32-544")
@@ -91,19 +91,21 @@ Set-Alias -Name tff -Value Open-TerraFiles -Description 'tff - open *.tf & *.tfv
 
 ##### Azure Functions ##### 
 $myAzTenant = 'Your-AzTenant-Id'
-$myAzSub = 'Your-AzSubscription-Id'
-$jumpWin = 'vm-windows.az-region.cloudapp.azure.com'
-$jumpLin = 'adminuser@vm-linux.az-region.cloudapp.azure.com'
-$azSshKey = "$env:OneDrive\.ssh\az-ssh-key.pem"
+$jumpWin = 'vm-windows.az-region.cloudapp.azure.com' # Windows jumpbox
+$jumpLin = 'adminuser@vm-linux.az-region.cloudapp.azure.com' # Linux jumpbox
+$azSshKey = "$env:OneDrive\.ssh\az-ssh-key.pem" # Linux jumpbox ssh-key
 
-function Connect-Azure { az login -t $myAzTenant }
+# myaz - Function to use az cli to connect to tenant
+function Connect-Azure { az login -t $myAzTenant } 
 Set-Alias -Name myaz -Value Connect-Azure -Description 'use az cli to connect to tenant' -ea 0
 
+# jumpwin - Function to connect to Windows vm jumpbox
 function Connect-JumpWin { Start-Process "$env:SystemRoot\system32\mstsc.exe" -ArgumentList "/v:$jumpWin" }
-Set-Alias -Name jumpwin -Value Connect-JumpWin -Description 'rdp az jumpwin' -ea 0
+Set-Alias -Name jumpwin -Value Connect-JumpWin -Description 'rdp az jumpwin vm' -ea 0
 
+# jumplin - Function to connect to Linux vm jumpbox
 function Connect-JumpLin { ssh "$jumpLin" -i $azSshKey = "$env:OneDrive\backup\ssh-tacocat008.pem" }
-Set-Alias -Name jumplin -Value Connect-JumpLin -Description 'ssh az jumplin' -ea 0
+Set-Alias -Name jumplin -Value Connect-JumpLin -Description 'ssh az jumplin vm' -ea 0
 
 ##### PoSh Environment Result #####
 # Display aliases and paths for quick reference
