@@ -1,12 +1,12 @@
 # PoSh-Profile
 
 This is a base Powershell $PROFILE ... & it is always a "Work-in-Progress". 
-It is not "static" and gets customized for each work environment purpose.
 
 ## Highlights
 
 - Easy to extend with additional functions and aliases.
 - Launches on every machine that is syncing `$env:OneDrive`.
+- This is "dynamic" - customize it for each work environment purpose.
 - Includes PowerShell functions to emulate Linux utilities (`grep`, `sed`, `touch`, `unzip`, etc.).
 
 ## Use Locations
