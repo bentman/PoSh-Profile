@@ -11,9 +11,9 @@ This is a base Powershell $PROFILE ... & it is always a "Work-in-Progress".
 
 ## Use Locations
 
-- Windows PowerShell (Modern)(`pwsh.exe`): `$env:OneDrive\Docments\PowerShell\profile.ps1`
-- Windows PowerShell (Legacy)(`powershell.exe`): `$env:OneDrive\Docments\WindowsPowerShell\profile.ps1`
-- Linux Modern PowerShell (`pwsh`): `~/.config/powershell/profile.ps1` (...stay tuned for update!)
+- Windows PowerShell (Modern `pwsh.exe`): `$env:OneDrive\Docments\PowerShell\profile.ps1`
+- Windows PowerShell (Legacy `powershell.exe`): `$env:OneDrive\Docments\WindowsPowerShell\profile.ps1`
+- Linux/Mac PowerShell (bash/zsh `pwsh`): `~/.config/powershell/profile.ps1` (...stay tuned for update!)
 - Helpful command to find appropriate $PROFILE location: `$PROFILE | Format-List * -Force`
 
 ## Contributions
