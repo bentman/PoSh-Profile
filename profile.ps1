@@ -91,9 +91,10 @@ Set-Alias -Name tff -Value Open-TerraFiles -Description 'tff - open *.tf & *.tfv
 
 ##### Azure Functions ##### 
 $myAzTenant = 'Your-AzTenant-Id'
+$jumpAdmin = 'adminuser' # VM Administrator Username
 $jumpWin = 'vm-windows.az-region.cloudapp.azure.com' # Windows jumpbox
-$jumpLin = 'adminuser@vm-linux.az-region.cloudapp.azure.com' # Linux jumpbox
-$azSshKey = "$env:OneDrive\.ssh\az-ssh-key.pem" # Linux jumpbox ssh-key
+$jumpLin = 'vm-linux.az-region.cloudapp.azure.com' # Linux jumpbox
+$azSshKey = "$env:USERPROFILE\.ssh\az-ssh-key.pem" # Linux jumpbox ssh-key
 
 # myaz - Function to use az cli to connect to tenant
 function Connect-Azure { az login -t $myAzTenant } 
@@ -104,7 +105,7 @@ function Connect-JumpWin { Start-Process "$env:SystemRoot\system32\mstsc.exe" -A
 Set-Alias -Name jumpwin -Value Connect-JumpWin -Description 'rdp az jumpwin vm' -ea 0
 
 # jumplin - Function to connect to Linux vm jumpbox
-function Connect-JumpLin { ssh $jumpLin -i $azSshKey }
+function Connect-JumpLin { ssh "$jumpAdmin@$jumpLin" -i $azSshKey }
 Set-Alias -Name jumplin -Value Connect-JumpLin -Description 'ssh az jumplin vm' -ea 0
 
 ##### PoSh Environment Result #####
