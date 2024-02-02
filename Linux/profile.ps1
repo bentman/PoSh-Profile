@@ -76,7 +76,7 @@ function Connect-Azure { az login -t $myAzTenant }
 Set-Alias -Name myaz -Value Connect-Azure -Description 'use az cli to connect to tenant' -ea 0
 
 # jumpwin - Function to connect to Windows vm jumpbox
-function Connect-JumpWin { Start-Process "$env:SystemRoot\system32\mstsc.exe" -ArgumentList "/v:$jumpWin" }
+function Connect-JumpWin { Start-Process "/snap/bin/remmina" -ArgumentList "-c rdp://$jumpWin" }
 Set-Alias -Name jumpwin -Value Connect-JumpWin -Description 'rdp az jumpwin vm' -ea 0
 
 # jumplin - Function to connect to Linux vm jumpbox
