@@ -69,7 +69,7 @@ $myAzTenant = 'Your-AzTenant-Id'
 $jumpAdmin = 'adminuser' # VM Administrator Username
 $jumpWin = 'vm-windows.az-region.cloudapp.azure.com' # Windows jumpbox
 $jumpLin = 'vm-linux.az-region.cloudapp.azure.com' # Linux jumpbox
-$azSshKey = "$env:USERPROFILE\.ssh\az-ssh-key.pem" # Linux jumpbox ssh-key
+$azSshKey = "~/.ssh/az-ssh-key.pem" # Linux jumpbox ssh-key
 
 # myaz - Function to use az cli to connect to tenant
 function Connect-Azure { az login -t $myAzTenant }
