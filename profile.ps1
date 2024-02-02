@@ -15,6 +15,16 @@ $Host.UI.RawUI.WindowTitle = if ($amIAdmin) { "Administrator: $whoIsMe" } else {
 Write-Host "Reticulating Splines..." -ForegroundColor Yellow
 
 ##### Functions #####
+# recycle - Function to move file to recycle bin
+function Move-ToRecycleBin ($fileName) { 
+    if (-not(Get-Module Recycle)) {
+        Install-Module Recycle # -Scope CurrentUser <or> -Scope AllUsers
+        Import-Module Recycle 
+    }
+    Remove-ItemSafely -Path "$fileName" 
+}
+Set-Alias -Name recycle -Value Move-ToRecycleBin -Description "move file to recycle bin" -ea 0
+
 # edge - Function to open Microsoft Edge
 function Open-Edge { Start-Process "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe" }
 Set-Alias -Name edge -Value Open-Edge -Description "open edge as current user" -ea 0
@@ -85,18 +95,24 @@ Set-Alias -Name unzip -Value Expand-ZipToFolder -Description 'unzip - $zipFile t
 function Open-Ps1Files { Get-ChildItem -Path . -Filter *.ps1 | ForEach-Object { code $_.FullName } }
 Set-Alias -Name ops -Value Open-Ps1Files -Description 'ops - open *.ps1 in vscode' -ea 0
 
+# tfv - Function to open all Terraform Variable files (*.tfvars) in current path using VSCode
+function Open-TerraVars { Get-ChildItem -Path . -Include *.tfvars -Recurse | ForEach-Object { code $_.FullName } }
+Set-Alias -Name tfv -Value Open-TerraVars -Description 'tfv - open *.tfvars in vscode' -ea 0
+
 # tff - Function to open all Terraform files (*.tf,*.tfvars) in current path using VSCode
-function Open-TerraFiles { Get-ChildItem -Path . -Include *.tf, *.tfvars -Recurse | ForEach-Object { code $_.FullName } }
-Set-Alias -Name tff -Value Open-TerraFiles -Description 'tff - open *.tf & *.tfvars in vscode' -ea 0
+function Open-TerraFiles { Get-ChildItem -Path . -Include *.tf | ForEach-Object { code $_.FullName } }
+Set-Alias -Name tff -Value Open-TerraFiles -Description 'tff - open *.tf in vscode' -ea 0
 
 ##### Azure Functions ##### 
-$myAzTenant = 'Your-AzTenant-Id'
-$jumpWin = 'vm-windows.az-region.cloudapp.azure.com' # Windows jumpbox
-$jumpLin = 'adminuser@vm-linux.az-region.cloudapp.azure.com' # Linux jumpbox
-$azSshKey = "$env:OneDrive\.ssh\az-ssh-key.pem" # Linux jumpbox ssh-key
+$myAzTenant = '< YourTenantId >'
+$myAzSub = '< YourSubscriptionId >'
+$jumpAdmin = '< YourAdminId >'
+$jumpWin = '< YourWinVM >.< YourRegion >.cloudapp.azure.com'
+$jumpLin = '< YourWinVM >.< YourRegion >.cloudapp.azure.com'
+$azSshKey = "$env:OneDrive\.ssh\ssh-jumplin.pem" # Your SSH Private-Key
 
 # myaz - Function to use az cli to connect to tenant
-function Connect-Azure { az login -t $myAzTenant } 
+function Connect-Azure { az login -t $myAzTenant }
 Set-Alias -Name myaz -Value Connect-Azure -Description 'use az cli to connect to tenant' -ea 0
 
 # jumpwin - Function to connect to Windows vm jumpbox
@@ -104,12 +120,12 @@ function Connect-JumpWin { Start-Process "$env:SystemRoot\system32\mstsc.exe" -A
 Set-Alias -Name jumpwin -Value Connect-JumpWin -Description 'rdp az jumpwin vm' -ea 0
 
 # jumplin - Function to connect to Linux vm jumpbox
-function Connect-JumpLin { ssh $jumpLin -i $azSshKey }
+function Connect-JumpLin { ssh "$jumpAdmin@$jumpLin" -i $azSshKey }
 Set-Alias -Name jumplin -Value Connect-JumpLin -Description 'ssh az jumplin vm' -ea 0
 
 ##### PoSh Environment Result #####
 # Display aliases and paths for quick reference
-(Get-Alias | Where-Object { $_.Name -in @('edge', 'rdp', 'mypip', 'grep', 'ops', 'tff', 'touch', 'sed', 'unzip') } |
+(Get-Alias | Where-Object { $_.Name -in @('edge', 'rdp', 'mypip', 'grep', 'ops', 'tfv', 'tff', 'touch', 'sed', 'unzip') } |
 Format-Table Name, Definition, Description -AutoSize -HideTableHeaders | Out-String).trim()
 
 # Who am I & am I running as admin?
@@ -124,5 +140,21 @@ Write-Host "    $(Test-Path $gitRepos)... $gitRepos"
 Write-Host "    $(Test-Path $poShProfile.FullName)... $($poShProfile.FullName)"
 
 Push-Location $workFldr
+
+# $PROFILE | Format-List * -Force
+
+##### More functions than really needed #####
+function Compare-DnsResolution ([string]$DomainName) {
+    # Local DNS resolution
+    try { $localResult = Resolve-DnsName $DomainName; Write-Host "Local DNS Resolution for $($DomainName): $($localResult.IPAddress.split(' '))" }
+    catch { Write-Host "Local DNS Resolution Failed for $DomainName" }
+    # DNS resolution using external servers
+    $dnsServers = @("1.1.1.1", "8.8.8.8")
+    foreach ($server in $dnsServers) {
+        try { $externalResult = Resolve-DnsName $DomainName -Server $server; Write-Host "DNS Resolution using $($server) for $($DomainName): $($externalResult.IPAddress.split(' '))" } 
+        catch { Write-Host "DNS Resolution Failed using server $server for $DomainName" }
+    }
+}
+Set-Alias -Name dnschk -Value Compare-DnsResolution -Description 'check dhcp dns vs nslookup' -ea 0
 
 # $PROFILE | Format-List * -Force
