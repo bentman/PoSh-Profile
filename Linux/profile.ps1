@@ -2,7 +2,7 @@
 $gitName = 'bentman' # GitHub Name
 $gitOnline = "https://GitHub.com/$($gitName)?tab=repositories" # GitHub Repository
 $gitRepos = "~/CODE/REPO/$($gitName)/Repositories/" # Local GitHub Workspace
-$gitProfile = "$gitRepos/PoSh-Profile/Linux/profile.ps1" # PoshProfile on GitHub Repository
+$gitProfile = "$($gitRepos)PoSh-Profile/Linux/profile.ps1" # PoshProfile on GitHub Repository
 $poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
 $workFldr = "~/CODE/WORK/" # Sandbox Code Workspace
 $whoIsMe = whoami
