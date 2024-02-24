@@ -22,7 +22,7 @@ function Move-ToRecycleBin ($fileName) {
 Set-Alias -Name recycle -Value Move-ToRecycleBin -Description "move file to recycle bin" -ea 0
 
 # clrtmp - Function to remove $env:TEMP items older than 7 days
-function Clear-OldTemp { Get-ChildItem "$env:TEMP\*" -Recurse | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-7) } }
+function Clear-OldTemp { Get-ChildItem "$env:TEMP\*" -Recurse | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-7) } | Remove-Item -Recurse }
 Set-Alias -Name clrtmp -Value Clear-OldTemp -Description 'remove $env:TEMP items older 7 days' -ea 0
 
 # edge - Function to open Microsoft Edge
@@ -75,7 +75,8 @@ function Find-Pattern ([string]$p, [string]$i, [string]$r) {
     if (!(Test-Path $i)) { Write-Error "Input path not found: $i"; return }; $item = gi $i
     if ($item -is [System.IO.FileInfo]) { Get-Content $i | Select-String $p } 
     elseif ($item -is [System.IO.DirectoryInfo]) { gi $i -File -Recurse:$r | % { Get-Content $_.FullName | Select-String $p } } 
-    else { Write-Error "Unsupported input type: $i" } }
+    else { Write-Error "Unsupported input type: $i" } 
+}
 Set-Alias -Name grep -Value Find-Pattern -Description 'grep - find $pattern from $input' -ea 0
 
 # touch - Function to create a new file if it does not exist
@@ -83,14 +84,17 @@ function New-File ($f) { if (!(Test-Path $f)) { New-Item -Path $f -ItemType File
 Set-Alias -Name touch -Value New-File -Description 'touch - if not $file, create here' -ea 0
 
 # sed - Function to replace a pattern in a file
-function Set-Pattern ([string]$f, [string]$p, [string]$r) { if (!(Test-Path $f)) { Write-Error "File not found: $f"; return }
-    (gc $f).Replace($p, $r) | sc $f}
+function Set-Pattern ([string]$f, [string]$p, [string]$r) {
+    if (!(Test-Path $f)) { Write-Error "File not found: $f"; return }
+    (gc $f).Replace($p, $r) | sc $f
+}
 Set-Alias -Name sed -Value Set-Pattern -Description 'sed - $replace a $pattern in $file' -ea 0
 
 # unzip - Function to expand a zip file to a folder
 function Expand-ZipToFolder ([string]$zf, [string]$zfd) {
     if (!$zfd) { $zi = gi $zf; $zfd = ni -Path "$($PWD.Path)\$($zi.BaseName)" -ItemType Directory -Force }
-    else { $zfd = ni -Path $zfd -ItemType Directory -Force }; Expand-Archive -Path $zf -DestinationPath $zfd -Verbose }
+    else { $zfd = ni -Path $zfd -ItemType Directory -Force }; Expand-Archive -Path $zf -DestinationPath $zfd -Verbose 
+}
 Set-Alias -Name unzip -Value Expand-ZipToFolder -Description 'unzip - $zipFile to $zipFolder' -ea 0
 
 ##### VSCode Functions #####
