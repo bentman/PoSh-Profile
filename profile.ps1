@@ -12,18 +12,18 @@ $whoIsMe = whoami.exe
 $Host.UI.RawUI.WindowTitle = if ($amIAdmin) { "Administrator: $whoIsMe" } else { "$whoIsMe" }
 
 # Fun phrase to display while profile is loading
-Write-Host "Reticulating Splines..." -ForegroundColor Yellow
+Write-Host "`nReticulating Splines..." -ForegroundColor Yellow
 
 ##### Functions #####
 # recycle - Function to move file to recycle bin
 function Move-ToRecycleBin ($fileName) { 
-    if (-not(Get-Module Recycle)) {
-        Install-Module Recycle # -Scope CurrentUser <or> -Scope AllUsers
-        Import-Module Recycle 
-    }
-    Remove-ItemSafely -Path "$fileName" 
+    if (!(Get-Module Recycle)) { Install-Module Recycle; Import-Module Recycle }; Remove-ItemSafely -Path "$fileName" 
 }
 Set-Alias -Name recycle -Value Move-ToRecycleBin -Description "move file to recycle bin" -ea 0
+
+# clrtmp - Function to remove $env:TEMP items older than 7 days
+function Clear-OldTemp { Get-ChildItem "$env:TEMP\*" -Recurse | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-7) } }
+Set-Alias -Name clrtmp -Value Clear-OldTemp -Description 'remove $env:TEMP items older 7 days' -ea 0
 
 # edge - Function to open Microsoft Edge
 function Open-Edge { Start-Process "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe" }
@@ -128,8 +128,7 @@ Set-Alias -Name jumplin -Value Connect-JumpLin -Description 'ssh az jumplin vm' 
 
 ##### PoSh Environment Result #####
 # Display aliases and paths for quick reference
-(Get-Alias | Where-Object { $_.Name -in @('edge', 'rdp', 'mypip', 'grep', 'ops', 'tfv', 'tff', 'touch', 'sed', 'unzip') } |
-Format-Table Name, Definition, Description -AutoSize -HideTableHeaders | Out-String).trim()
+(Get-Alias | Where-Object { $_.Description } | Format-Table Name, Definition, Description -AutoSize -HideTableHeaders | Out-String).trim()
 
 # Who am I & am I running as admin?
 Write-Host "`nWho am I?" -ForegroundColor Yellow
