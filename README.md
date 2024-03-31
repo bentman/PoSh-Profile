@@ -1,6 +1,7 @@
 # PoSh-Profile
 
 This is a base Powershell $PROFILE ... & it is always a "Work-in-Progress". 
+
 It is not "static" and gets customized for each work environment purpose.
 
 ## Highlights
