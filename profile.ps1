@@ -73,14 +73,14 @@ Set-Alias -Name gme -Value Open-GitOnline -Description 'gme - open online git re
 # grep - Function to find a pattern in the input
 function Find-Pattern ([string]$p, [string]$i, [string]$r) {
     if (!(Test-Path $i)) { Write-Error "Input path not found: $i"; return }; $item = gi $i
-    if ($item -is [System.IO.FileInfo]) { Get-Content $i | Select-String $p } 
-    elseif ($item -is [System.IO.DirectoryInfo]) { gi $i -File -Recurse:$r | % { Get-Content $_.FullName | Select-String $p } } 
+    if ($item -is [System.IO.FileInfo]) { cat $i | sls $p } 
+    elseif ($item -is [System.IO.DirectoryInfo]) { gi $i -File -Recurse:$r | % { cat $_.FullName | sls $p } } 
     else { Write-Error "Unsupported input type: $i" } 
 }
 Set-Alias -Name grep -Value Find-Pattern -Description 'grep - find $pattern from $input' -ea 0
 
 # touch - Function to create a new file if it does not exist
-function New-File ($f) { if (!(Test-Path $f)) { New-Item -Path $f -ItemType File -Force } }
+function New-File ($f) { if (!(Test-Path $f)) { ni -Path $f -ItemType File -Force } }
 Set-Alias -Name touch -Value New-File -Description 'touch - if not $file, create here' -ea 0
 
 # sed - Function to replace a pattern in a file
