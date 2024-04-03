@@ -1,3 +1,4 @@
+##### Personal Environment Setup #####
 if (Test-Path "d:\WORK") { $workFldr = "d:\WORK" } # Sandbox Code Workspace
 else { $workFldr = "c:\WORK" }
 $gitName = 'bentman' # GitHub Name
