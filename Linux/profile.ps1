@@ -1,10 +1,10 @@
 ##### Personal Environment Setup #####
-$gitName = 'bentman' # GitHub Name
-$gitOnline = "https://GitHub.com/$($gitName)?tab=repositories" # GitHub Repository
-$gitRepos = "~/CODE/REPO/$($gitName)/Repositories/" # Local GitHub Workspace
-$gitProfile = "$($gitRepos)PoSh-Profile/Linux/profile.ps1" # PoshProfile on GitHub Repository
-$poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
 $workFldr = "~/CODE/WORK/" # Sandbox Code Workspace
+$poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
+$gitName = 'bentman' # GitHub Name
+$gitRepos = "$workFldr/$($gitName)/Repositories/" # Local GitHub Workspace
+$gitProfile = "$($gitRepos)/PoSh-Profile/Linux/profile.ps1" # PoshProfile on GitHub Repository
+$gitOnline = "https://GitHub.com/$($gitName)?tab=repositories" # GitHub Repository
 $whoIsMe = whoami
 
 # Fun phrase to display while profile is loading
