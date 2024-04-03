@@ -1,8 +1,8 @@
 ##### Personal Environment Setup #####
-$workFldr = "~/WORK/" # Sandbox Code Workspace
+$workFldr = "~/WORK" # Sandbox Code Workspace
 $poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
 $gitName = 'bentman' # GitHub Name
-$gitRepos = "$workFldr/CODE/$($gitName)/Repositories/" # Local GitHub Workspace
+$gitRepos = "$workFldr/CODE/$($gitName)/Repositories" # Local GitHub Workspace
 $gitProfile = "$($gitRepos)/PoSh-Profile/Linux/profile.ps1" # PoshProfile on GitHub Repository
 $gitOnline = "https://GitHub.com/$($gitName)?tab=repositories" # GitHub Repository
 $whoIsMe = whoami
