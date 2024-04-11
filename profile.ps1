@@ -1,21 +1,48 @@
-##### Personal Environment Setup #####
-if (Test-Path "d:\WORK") { $workFldr = "d:\WORK" } # Sandbox Code Workspace
-else { $workFldr = "c:\WORK" }
+<#
+    INSERT DOC HERE ;-)
+#>
+############### DECLARATION ###############
+##### Local Environment Declaration #####
+$poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
+$localDrives = Get-PSDrive -PSProvider 'FileSystem' | Where-Object { $_.DisplayRoot -eq $null -and $_.Name -ne 'Temp' }
+$workFldr = ($localDrives | ForEach-Object { Get-ChildItem "$($_.Root)" -Filter 'WORK' -Directory -ea 0 }).FullName
+if (-not ($workFldr)) { New-Item -Path "$env:SystemDrive\WORK" -ItemType Directory -Force }
+$codeFldr = "$workFldr\CODE"; if (-not ($codeFldr)) { $codeFldr = New-Item -Path "$workFldr\CODE" -ItemType Directory -Force }
+
+##### Internet Environment Declaration #####
 $gitName = 'bentman' # GitHub Name
 $gitOnline = "https://GitHub.com/$($gitName)?tab=repositories" # GitHub Repository
-$gitRepos = "e:\GitHub\$($gitName)\Repositories" # Local GitHub Workspace
+$gitRepos = "$codeFldr\GitHub\$($gitName)\Repositories" # Local GitHub Workspace
 $gitProfile = "$gitRepos\PoSh-Profile\profile.ps1" # PoshProfile on GitHub Repository
-$poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
 
-# Set the console title based on administrative status
-$amIAdmin = [bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups -match "S-1-5-32-544")
-$whoIsMe = whoami.exe
-$Host.UI.RawUI.WindowTitle = if ($amIAdmin) { "Administrator: $whoIsMe" } else { "$whoIsMe" }
+##### Cloud Environment Declaration ##### 
+$myAzTenant = '< YourTenantId >'
+$myAzSub = '< YourSubscriptionId >'
+$jumpWinAdmin = '< YourAdminId >'
+$winSshKey = "$env:OneDrive\.ssh\ssh-jumpwin.pem" # Your SSH Private-Key
+$jumpWin = "$jumpWinAdmin.< YourRegion >.cloudapp.azure.com"
+$jumpLinAdmin = '< YourAdminId >'
+$linSshKey = "$env:OneDrive\.ssh\ssh-jumplin.pem" # Your SSH Private-Key
+$jumpLin = "$jumpLinAdmin.< YourRegion >.cloudapp.azure.com"
 
-# Fun phrase to display while profile is loading
-Write-Host "`nReticulating Splines..." -ForegroundColor Yellow
+###############  FUNCTIONS  ###############
+##### Misc functions #####
+# work - Function to navigate to work folder
+function Find-Work { Push-Location -Path $workFldr }
+Set-Alias -Name work -Value Find-Work -Description 'goto $workFldr' -ea 0
 
-##### Functions #####
+# code - Function to navigate to code folder
+function Find-CodeDev { Push-Location -Path $codeFldr }
+Set-Alias -Name dev -Value Find-CodeDev -Description 'goto $codeFldr' -ea 0
+
+# edge - Function to open Microsoft Edge
+function Open-Edge { Start-Process "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe" }
+Set-Alias -Name edge -Value Open-Edge -Description "open edge as current user" -ea 0
+
+# rdp - Function to start a remote desktop connection
+function Start-RDP ($systemName) { Start-Process "$env:SystemRoot\system32\mstsc.exe" -ArgumentList "/v:$systemName" }
+Set-Alias -Name rdp -Value Start-RDP -Description 'rdp computer/server' -ea 0
+
 # recycle - Function to move file to recycle bin
 function Move-ToRecycleBin ($fileName) { 
     if (!(Get-Module Recycle)) { Install-Module Recycle; Import-Module Recycle }; Remove-ItemSafely -Path "$fileName" 
@@ -23,12 +50,8 @@ function Move-ToRecycleBin ($fileName) {
 Set-Alias -Name recycle -Value Move-ToRecycleBin -Description "move file to recycle bin" -ea 0
 
 # clrtmp - Function to remove $env:TEMP items older than 7 days
-function Clear-OldTemp { Get-ChildItem "$env:TEMP\*" -Recurse | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-7) } | Remove-Item -Recurse }
+function Clear-OldTemp { Get-ChildItem "$env:TEMP\*" -Recurse | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-7) } | Remove-Item -Recurse -Verbose }
 Set-Alias -Name clrtmp -Value Clear-OldTemp -Description 'remove $env:TEMP items older 7 days' -ea 0
-
-# edge - Function to open Microsoft Edge
-function Open-Edge { Start-Process "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe" }
-Set-Alias -Name edge -Value Open-Edge -Description "open edge as current user" -ea 0
 
 # myip - Function to display public IP addresses
 function Get-PublicIp {
@@ -38,17 +61,6 @@ function Get-PublicIp {
     Write-Host "`n  Public IP4: $($pubIp4.ip) `n  Public IP6: $($pubIp6)`n" -ForegroundColor Magenta
 }
 Set-Alias -Name mypip -Value Get-PublicIp -Description 'what is my public ip?' -ea 0
-
-# rdp - Function to start a remote desktop connection
-function Start-RDP ($systemName) { Start-Process "$env:SystemRoot\system32\mstsc.exe" -ArgumentList "/v:$systemName" }
-Set-Alias -Name rdp -Value Start-RDP -Description 'rdp computer/server' -ea 0
-
-# work - Function to navigate to or create and navigate to the work folder
-function Find-Work {
-    if (-not (Test-Path $workFldr -ea 0)) { New-Item -Path $workFldr -ItemType Directory -Force }
-    Push-Location -Path $workFldr
-}
-Set-Alias -Name work -Value Find-Work -Description "if not work, create, goto work" -ea 0
 
 ##### Git functions #####
 # repo - Function to navigate to or create and navigate to the git repositories folder
@@ -66,7 +78,7 @@ Set-Alias -Name gcom -Value Invoke-GitCommit -Description 'git commit "$message"
 function Invoke-GitPush ($message) { git add .; git commit -m $message; git push }
 Set-Alias -Name gpush -Value Invoke-GitPush -Description 'git commit "$message" & push' -ea 0
 
-# gme - Function to 
+# gme - Function to open edge and goto online git-repo
 function Open-GitOnline { Start-Process "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe" -ArgumentList $gitOnline }
 Set-Alias -Name gme -Value Open-GitOnline -Description 'gme - open online git repo' -ea 0
 
@@ -108,60 +120,50 @@ function Open-TerraVars { Get-ChildItem -Path . -Include *.tfvars -Recurse | For
 Set-Alias -Name tfv -Value Open-TerraVars -Description 'tfv - open *.tfvars in vscode' -ea 0
 
 # tff - Function to open all Terraform files (*.tf,*.tfvars) in current path using VSCode
-function Open-TerraFiles { Get-ChildItem -Path . -Include *.tf | ForEach-Object { code $_.FullName } }
+function Open-TerraFiles { Get-ChildItem -Path .\*.tf | ForEach-Object { code $_.FullName } }
 Set-Alias -Name tff -Value Open-TerraFiles -Description 'tff - open *.tf in vscode' -ea 0
 
 ##### Azure Functions ##### 
-$myAzTenant = '< YourTenantId >'
-$myAzSub = '< YourSubscriptionId >'
-$jumpAdmin = '< YourAdminId >'
-$jumpWin = '< YourWinVM >.< YourRegion >.cloudapp.azure.com'
-$jumpLin = '< YourWinVM >.< YourRegion >.cloudapp.azure.com'
-$azSshKey = "$env:OneDrive\.ssh\ssh-jumplin.pem" # Your SSH Private-Key
-
 # myaz - Function to use az cli to connect to tenant
 function Connect-Azure { az login -t $myAzTenant }
 Set-Alias -Name myaz -Value Connect-Azure -Description 'use az cli to connect to tenant' -ea 0
 
-# jumpwin - Function to connect to Windows vm jumpbox
-function Connect-JumpWin { Start-Process "$env:SystemRoot\system32\mstsc.exe" -ArgumentList "/v:$jumpWin" }
-Set-Alias -Name jumpwin -Value Connect-JumpWin -Description 'rdp az jumpwin vm' -ea 0
+# jumpwin - Function to SSH Windows vm jumpbox
+function Connect-JumpWin { ssh "$jumpAdmin@$jumpWin" -i $winSshKey }
+Set-Alias -Name jumpwin -Value Connect-JumpWin -Description 'ssh az jumpwin vm' -ea 0
 
-# jumplin - Function to connect to Linux vm jumpbox
-function Connect-JumpLin { ssh "$jumpAdmin@$jumpLin" -i $azSshKey }
+<# jumpwin - Function to RDP Windows vm jumpbox
+function Connect-JumpWin { Start-Process "$env:SystemRoot\system32\mstsc.exe" -ArgumentList "/v:$jumpWin" }
+Set-Alias -Name jumpwin -Value Connect-JumpWin -Description 'rdp az jumpwin vm' -ea 0#>
+
+# jumplin - Function to SSH Linux vm jumpbox
+function Connect-JumpLin { ssh "$jumpAdmin@$jumpLin" -i $linSshKey }
 Set-Alias -Name jumplin -Value Connect-JumpLin -Description 'ssh az jumplin vm' -ea 0
 
-##### PoSh Environment Result #####
+###############  EXECUTION  ###############
+##### Set the console title #####
+$amIAdmin = [bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups -match "S-1-5-32-544")
+$whoIsMe = whoami.exe
+$Host.UI.RawUI.WindowTitle = if ($amIAdmin) { "Administrator: $whoIsMe" } else { "$whoIsMe" }
+
+##### Fun phrase to display #####
+Write-Host "`nReticulating Splines..." -ForegroundColor Yellow
+
+##### Custom PoSh Alias Loaded #####
 # Display aliases and paths for quick reference
 (Get-Alias | Where-Object { $_.Description } | Format-Table Name, Definition, Description -AutoSize -HideTableHeaders | Out-String).trim()
 
-# Who am I & am I running as admin?
+###### Who am I? & am I admin? #####
 Write-Host "`nWho am I?" -ForegroundColor Yellow
 Write-Host "    $whoIsMe" -ForegroundColor Green
 Write-Host "    Running as admin?... $($amIAdmin)" 
 
-# Is my stuff here?
+##### Is my stuff here? ##### 
 Write-Host "`nWhere is my stuff?" -ForegroundColor Yellow
 Write-Host "    $(Test-Path $workFldr)... $workFldr"
 Write-Host "    $(Test-Path $gitRepos)... $gitRepos"
 Write-Host "    $(Test-Path $poShProfile.FullName)... $($poShProfile.FullName)"
 
-Push-Location $workFldr
+Find-Work
 
-# $PROFILE | Format-List * -Force
-
-##### More functions than really needed #####
-function Compare-DnsResolution ([string]$DomainName) {
-    # Local DNS resolution
-    try { $localResult = Resolve-DnsName $DomainName; Write-Host "Local DNS Resolution for $($DomainName): $($localResult.IPAddress.split(' '))" }
-    catch { Write-Host "Local DNS Resolution Failed for $DomainName" }
-    # DNS resolution using external servers
-    $dnsServers = @("1.1.1.1", "8.8.8.8")
-    foreach ($server in $dnsServers) {
-        try { $externalResult = Resolve-DnsName $DomainName -Server $server; Write-Host "DNS Resolution using $($server) for $($DomainName): $($externalResult.IPAddress.split(' '))" } 
-        catch { Write-Host "DNS Resolution Failed using server $server for $DomainName" }
-    }
-}
-Set-Alias -Name dnschk -Value Compare-DnsResolution -Description 'check dhcp dns vs nslookup' -ea 0
-
-# $PROFILE | Format-List * -Force
+##### $PROFILE | Format-List * -Force #####
