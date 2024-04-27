@@ -2,20 +2,22 @@
     INSERT DOC HERE ;-)
 #>
 ############### DECLARATION ###############
-##### Local Environment Declaration #####
+##### Local Environment #####
+$whoIsMe = whoami.exe
 $poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
 $localDrives = Get-PSDrive -PSProvider 'FileSystem' | Where-Object { $_.DisplayRoot -eq $null -and $_.Name -ne 'Temp' }
 $workFldr = ($localDrives | ForEach-Object { Get-ChildItem "$($_.Root)" -Filter 'WORK' -Directory -ea 0 }).FullName
 if (-not ($workFldr)) { New-Item -Path "$env:SystemDrive\WORK" -ItemType Directory -Force }
 $codeFldr = "$workFldr\CODE"; if (-not ($codeFldr)) { $codeFldr = New-Item -Path "$workFldr\CODE" -ItemType Directory -Force }
 
-##### Internet Environment Declaration #####
+##### Internet Environment #####
 $gitName = 'bentman' # GitHub Name
 $gitOnline = "https://GitHub.com/$($gitName)?tab=repositories" # GitHub Repository
 $gitRepos = "$codeFldr\GitHub\$($gitName)\Repositories" # Local GitHub Workspace
+if (-not ($gitRepos)) { New-Item -Path "$gitRepos" -ItemType Directory -Force }
 $gitProfile = "$gitRepos\PoSh-Profile\profile.ps1" # PoshProfile on GitHub Repository
 
-##### Cloud Environment Declaration ##### 
+##### Cloud Environment #####
 $myAzTenant = '< YourTenantId >'
 $myAzSub = '< YourSubscriptionId >'
 $jumpWinAdmin = '< YourAdminId >'
@@ -25,13 +27,12 @@ $jumpLinAdmin = '< YourAdminId >'
 $linSshKey = "$env:OneDrive\.ssh\ssh-jumplin.pem" # Your SSH Private-Key
 $jumpLin = "$jumpLinAdmin.< YourRegion >.cloudapp.azure.com"
 
-###############  FUNCTIONS  ###############
-##### Misc functions #####
+##########  FUNCTIONS  ##########
 # work - Function to navigate to work folder
 function Find-Work { Push-Location -Path $workFldr }
 Set-Alias -Name work -Value Find-Work -Description 'goto $workFldr' -ea 0
 
-# code - Function to navigate to code folder
+# dev - Function to navigate to code folder
 function Find-CodeDev { Push-Location -Path $codeFldr }
 Set-Alias -Name dev -Value Find-CodeDev -Description 'goto $codeFldr' -ea 0
 
@@ -140,25 +141,27 @@ Set-Alias -Name jumpwin -Value Connect-JumpWin -Description 'rdp az jumpwin vm' 
 function Connect-JumpLin { ssh "$jumpAdmin@$jumpLin" -i $linSshKey }
 Set-Alias -Name jumplin -Value Connect-JumpLin -Description 'ssh az jumplin vm' -ea 0
 
-###############  EXECUTION  ###############
-##### Set the console title #####
-$amIAdmin = [bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups -match "S-1-5-32-544")
-$whoIsMe = whoami.exe
-$Host.UI.RawUI.WindowTitle = if ($amIAdmin) { "Administrator: $whoIsMe" } else { "$whoIsMe" }
-
-##### Fun phrase to display #####
+##########  EXECUTION  ##########
+# Fun phrase to display 
 Write-Host "`nReticulating Splines..." -ForegroundColor Yellow
 
-##### Custom PoSh Alias Loaded #####
+# Set the console title 
+$amIAdmin = [bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups -match "S-1-5-32-544")
+$Host.UI.RawUI.WindowTitle = if ($amIAdmin) { "Administrator: $whoIsMe" } else { "$whoIsMe" }
+
+# Set prompt device\user
+function prompt { Write-Host ($whoIsMe + " " +(Get-Location).Path + ">") -nonewline; return " " }
+
+# Custom PoSh Alias Loaded 
 # Display aliases and paths for quick reference
 (Get-Alias | Where-Object { $_.Description } | Format-Table Name, Definition, Description -AutoSize -HideTableHeaders | Out-String).trim()
 
-###### Who am I? & am I admin? #####
+# Who am I & am I running as admin?
 Write-Host "`nWho am I?" -ForegroundColor Yellow
 Write-Host "    $whoIsMe" -ForegroundColor Green
 Write-Host "    Running as admin?... $($amIAdmin)" 
 
-##### Is my stuff here? ##### 
+# Is my stuff here?
 Write-Host "`nWhere is my stuff?" -ForegroundColor Yellow
 Write-Host "    $(Test-Path $workFldr)... $workFldr"
 Write-Host "    $(Test-Path $gitRepos)... $gitRepos"
@@ -166,4 +169,22 @@ Write-Host "    $(Test-Path $poShProfile.FullName)... $($poShProfile.FullName)"
 
 Find-Work
 
+###########################################
 ##### $PROFILE | Format-List * -Force #####
+###########################################
+
+###########################################
+#### More functions than really needed ####
+###########################################
+function Compare-DnsResolution ([string]$DomainName) {
+    # Local DNS resolution
+    try { $localResult = Resolve-DnsName $DomainName; Write-Host "Local DNS Resolution for $($DomainName): $($localResult.IPAddress.split(' '))" }
+    catch { Write-Host "Local DNS Resolution Failed for $DomainName" }
+    # DNS resolution using external servers
+    $dnsServers = @("1.1.1.1", "8.8.8.8")
+    foreach ($server in $dnsServers) {
+        try { $externalResult = Resolve-DnsName $DomainName -Server $server; Write-Host "DNS Resolution using $($server) for $($DomainName): $($externalResult.IPAddress.split(' '))" } 
+        catch { Write-Host "DNS Resolution Failed using server $server for $DomainName" }
+    }
+}
+Set-Alias -Name dnschk -Value Compare-DnsResolution -Description 'check dhcp dns vs nslookup' -ea 0
