@@ -6,7 +6,7 @@
 $whoIsMe = whoami
 $poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
 $workFldr = "~/WORK" # Sandbox Code Workspace
-if (-not ($workFldr)) { New-Item -Path "~/WORK" -ItemType Directory -Force }
+if (-not ($workFldr)) { New-Item -Path "$workFldr" -ItemType Directory -Force }
 $codeFldr = "$workFldr/CODE" # Local Code Repo
 if (-not ($codeFldr)) { $codeFldr = New-Item -Path "$workFldr/CODE" -ItemType Directory -Force }
 
@@ -28,7 +28,8 @@ $azSshKey = "~/.ssh/az-ssh-key.pem" # Linux jumpbox ssh-key
 ##########  FUNCTIONS  ##########
 # work - Function to navigate to or create and navigate to the work folder
 function Find-Work { Push-Location -Path $workFldr }
-Set-Alias -Name work -Value Find-Work -Description 'goto $workFldr' -ea 0 # code - Function to navigate to code folder
+Set-Alias -Name work -Value Find-Work -Description 'goto $workFldr' -ea 0 
+
 # dev - Function to navigate to code folder
 function Find-CodeDev { Push-Location -Path $codeFldr }
 Set-Alias -Name dev -Value Find-CodeDev -Description 'goto $codeFldr' -ea 0
