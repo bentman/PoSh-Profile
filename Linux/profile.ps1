@@ -7,7 +7,8 @@ $whoIsMe = whoami
 $poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
 $workFldr = "~/WORK" # Sandbox Code Workspace
 if (-not ($workFldr)) { New-Item -Path "~/WORK" -ItemType Directory -Force }
-$codeFldr = "$workFldr/CODE"; if (-not ($codeFldr)) { $codeFldr = New-Item -Path "$workFldr\CODE" -ItemType Directory -Force }
+$codeFldr = "$workFldr/CODE" # Local Code Repo
+if (-not ($codeFldr)) { $codeFldr = New-Item -Path "$workFldr/CODE" -ItemType Directory -Force }
 
 ##### Internet Environment #####
 $gitName = 'bentman' # GitHub Name
