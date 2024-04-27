@@ -1,7 +1,7 @@
 <#
     INSERT DOC HERE ;-)
 #>
-############### DECLARATION ###############
+########## DECLARATION ##########
 ##### Local Environment #####
 $whoIsMe = whoami
 $poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile

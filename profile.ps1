@@ -1,7 +1,7 @@
 <#
     INSERT DOC HERE ;-)
 #>
-############### DECLARATION ###############
+########## DECLARATION ##########
 ##### Local Environment #####
 $whoIsMe = whoami.exe
 $poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
@@ -152,11 +152,10 @@ $Host.UI.RawUI.WindowTitle = if ($amIAdmin) { "Administrator: $whoIsMe" } else {
 # Set prompt device\user
 function prompt { Write-Host ($whoIsMe + " " +(Get-Location).Path + ">") -nonewline; return " " }
 
-# Custom PoSh Alias Loaded 
 # Display aliases and paths for quick reference
 (Get-Alias | Where-Object { $_.Description } | Format-Table Name, Definition, Description -AutoSize -HideTableHeaders | Out-String).trim()
 
-# Who am I & am I running as admin?
+# Who am I? & am I running as admin?
 Write-Host "`nWho am I?" -ForegroundColor Yellow
 Write-Host "    $whoIsMe" -ForegroundColor Green
 Write-Host "    Running as admin?... $($amIAdmin)" 
