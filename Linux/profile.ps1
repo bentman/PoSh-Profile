@@ -6,15 +6,21 @@
 $whoIsMe = whoami
 $poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
 $workFldr = "~/WORK" # Sandbox Code Workspace
-if (-not ($workFldr)) { New-Item -Path "$workFldr" -ItemType Directory -Force }
+if (-not ($workFldr)) { 
+    New-Item -Path "$workFldr" -ItemType Directory -Force 
+}
 $codeFldr = "$workFldr/CODE" # Local Code Repo
-if (-not ($codeFldr)) { $codeFldr = New-Item -Path "$workFldr/CODE" -ItemType Directory -Force }
+if (-not ($codeFldr)) { 
+    $codeFldr = New-Item -Path "$workFldr/CODE" -ItemType Directory -Force 
+}
 
 ##### Internet Environment #####
 $gitName = 'bentman' # GitHub Name
 $gitOnline = "https://GitHub.com/$($gitName)?tab=repositories" # GitHub Repository
 $gitRepos = "$workFldr/CODE/$($gitName)/Repositories" # Local GitHub Workspace
-if (-not ($gitRepos)) { New-Item -Path "$gitRepos" -ItemType Directory -Force }
+if (-not ($gitRepos)) { 
+    New-Item -Path "$gitRepos" -ItemType Directory -Force 
+}
 $gitProfile = "$($gitRepos)/PoSh-Profile/Linux/profile.ps1" # PoshProfile on GitHub Repository
 
 ##### Cloud Environment #####
@@ -54,10 +60,7 @@ Set-Alias -Name mypip -Value Get-PublicIp -Description 'what is my public ip?' -
 
 ##### Git functions #####
 # repo - Function to navigate to or create and navigate to the git repositories folder
-function Find-GitRepo {
-    if (-not (Test-Path $gitRepos -ea 0)) { New-Item -Path "$gitRepos" -ItemType Directory -Force }
-    Push-Location -Path $gitRepos
-}
+function Find-GitRepo { Push-Location -Path $gitRepos }
 Set-Alias -Name repo -Value Find-GitRepo -Description "if not repo, create, goto repo" -ea 0
 
 # gcom - Function to add all changes and commit with a message
