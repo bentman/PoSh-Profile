@@ -145,12 +145,14 @@ Set-Alias -Name jumplin -Value Connect-JumpLin -Description 'ssh az jumplin vm' 
 # Fun phrase to display 
 Write-Host "`nReticulating Splines..." -ForegroundColor Yellow
 
+function prompt { 
+    (Write-Host "$(($env:USERNAME).ToLower())@$(($env:COMPUTERNAME).ToLower()) " -ForegroundColor Green -nonewline) + `
+    (Write-Host "$((Get-Location).Path)> " -ForegroundColor Yellow -nonewline)
+}
+
 # Set the console title 
 $amIAdmin = [bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups -match "S-1-5-32-544")
 $Host.UI.RawUI.WindowTitle = if ($amIAdmin) { "Administrator: $whoIsMe" } else { "$whoIsMe" }
-
-# Set prompt device\user
-function prompt { Write-Host ($whoIsMe + " " +(Get-Location).Path + ">") -nonewline; return " " }
 
 # Display aliases and paths for quick reference
 (Get-Alias | Where-Object { $_.Description } | Format-Table Name, Definition, Description -AutoSize -HideTableHeaders | Out-String).trim()
