@@ -1,5 +1,53 @@
 <#
-    INSERT DOC HERE ;-)
+.SYNOPSIS
+    Initializes the PowerShell environment with configurations for local, internet, and cloud environments.
+
+.DESCRIPTION
+    This PowerShell profile script sets up the environment by defining variables, creating necessary directories,
+    and establishing functions and aliases for efficient task management and navigation.
+
+.DECLARATIONS
+    - Local Environment:
+        $whoIsMe: Contains the username retrieved from whoami.exe.
+        $poShProfile: Path to the PowerShell profile for all hosts.
+        $localDrives: Lists all local drives, excluding temporary and 'Temp' drives.
+        $workFldr: Searches or creates a 'WORK' directory on available drives.
+        $codeFldr: Defines or creates a 'CODE' directory inside the 'WORK' folder.
+
+    - Internet Environment:
+        $gitName: GitHub username.
+        $gitOnline: URL to the GitHub profile's repositories.
+        $gitRepos: Local path for GitHub repository workspace.
+        $gitProfile: Path to the PowerShell profile stored on GitHub.
+
+    - Cloud Environment:
+        Variables for Azure tenant and subscription IDs, admin IDs, and SSH keys for remote connections to virtual machines.
+
+.FUNCTIONS
+    - General Utilities:
+        Find-Work, Find-CodeDev, Open-Edge, Start-RDP, Move-ToRecycleBin, Clear-OldTemp, Get-PublicIp
+    - Git Operations:
+        Find-GitRepo, Invoke-GitCommit, Invoke-GitPush, Open-GitOnline
+    - Linux-style commands:
+        Find-Pattern (grep), New-File (touch), Set-Pattern (sed), Expand-ZipToFolder (unzip)
+    - Visual Studio Code operations:
+        Open-Ps1Files, Open-TerraVars, Open-TerraFiles
+    - Azure Functions:
+        Connect-Azure, Connect-JumpWin, Connect-JumpLin
+
+.ALIASES
+    - Provides shorthand access to the defined functions, such as 'work' for Find-Work and 'dev' for Find-CodeDev.
+
+.EXECUTION
+    - Initializes with a fun phrase, sets the console title based on the user's admin status, and configures the command prompt.
+    - Displays aliases and path configurations for quick reference.
+    - Checks and displays user identity and admin status, along with the existence of essential directories.
+
+.EXAMPLE
+    PowerShell starts and executes the profile script, setting up the environment automatically.
+
+.NOTES
+    Ensure to replace placeholder values in cloud and internet environment variables with actual data.
 #>
 ########## DECLARATION ##########
 ##### Local Environment #####
