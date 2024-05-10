@@ -55,14 +55,14 @@ $whoIsMe = whoami.exe
 $poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
 $localDrives = Get-PSDrive -PSProvider 'FileSystem' | Where-Object { $_.DisplayRoot -eq $null -and $_.Name -ne 'Temp' }
 $workFldr = ($localDrives | ForEach-Object { Get-ChildItem "$($_.Root)" -Filter 'WORK' -Directory -ea 0 }).FullName
-if (-not ($workFldr)) { New-Item -Path "$env:SystemDrive\WORK" -ItemType Directory -Force }
-$codeFldr = "$workFldr\CODE"; if (-not ($codeFldr)) { $codeFldr = New-Item -Path "$workFldr\CODE" -ItemType Directory -Force }
+if ($null -eq $workFldr) { New-Item -Path "$env:SystemDrive\WORK" -ItemType Directory -Force }
+$codeFldr = "$workFldr\CODE"; if (-not (Test-Path $codeFldr)) { $codeFldr = New-Item -Path "$codeFldr" -ItemType Directory -Force }
 
 ##### Internet Environment #####
 $gitName = 'bentman' # GitHub Name
 $gitOnline = "https://GitHub.com/$($gitName)?tab=repositories" # GitHub Repository
 $gitRepos = "$codeFldr\GitHub\$($gitName)\Repositories" # Local GitHub Workspace
-if (-not ($gitRepos)) { New-Item -Path "$gitRepos" -ItemType Directory -Force }
+if (-not (Test-Path $gitRepos)) { New-Item -Path "$gitRepos" -ItemType Directory -Force }
 $gitProfile = "$gitRepos\PoSh-Profile\profile.ps1" # PoshProfile on GitHub Repository
 
 ##### Cloud Environment #####

@@ -6,15 +6,15 @@
 $whoIsMe = whoami
 $poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
 $workFldr = "~/WORK" # Sandbox Code Workspace
-if (-not ($workFldr)) { New-Item -Path "$workFldr" -ItemType Directory -Force }
+if (!(Test-Path $workFldr)) { New-Item -Path "$workFldr" -ItemType Directory -Force }
 $codeFldr = "$workFldr/CODE" # Local Code Repo
-if (-not ($codeFldr)) { New-Item -Path "$workFldr/CODE" -ItemType Directory -Force }
+if (!(Test-Path $codeFldr)) { New-Item -Path "$codeFldr" -ItemType Directory -Force }
 
 ##### Internet Environment #####
 $gitName = 'bentman' # GitHub Name
 $gitOnline = "https://GitHub.com/$($gitName)?tab=repositories" # GitHub Repository
 $gitRepos = "$workFldr/CODE/$($gitName)/Repositories" # Local GitHub Workspace
-if (-not ($gitRepos)) { New-Item -Path "$gitRepos" -ItemType Directory -Force }
+if (!(Test-Path $gitRepos)) { New-Item -Path "$gitRepos" -ItemType Directory -Force }
 $gitProfile = "$($gitRepos)/PoSh-Profile/Linux/profile.ps1" # PoshProfile on GitHub Repository
 
 ##### Cloud Environment #####
