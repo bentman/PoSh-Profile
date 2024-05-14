@@ -56,7 +56,7 @@ $poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
 $localDrives = Get-PSDrive -PSProvider 'FileSystem' | Where-Object { $_.DisplayRoot -eq $null -and $_.Name -ne 'Temp' }
 $workFldr = ($localDrives | ForEach-Object { Get-ChildItem "$($_.Root)" -Filter 'WORK' -Directory -ea 0 }).FullName
 if ($null -eq $workFldr) { New-Item -Path "$env:SystemDrive\WORK" -ItemType Directory -Force }
-$codeFldr = "$workFldr\CODE"; if (-not (Test-Path $codeFldr)) { $codeFldr = New-Item -Path "$codeFldr" -ItemType Directory -Force }
+$codeFldr = "$workFldr\CODE"; if (-not (Test-Path $codeFldr)) { New-Item -Path "$codeFldr" -ItemType Directory -Force }
 
 ##### Internet Environment #####
 $gitName = 'bentman' # GitHub Name
@@ -193,9 +193,10 @@ Set-Alias -Name jumplin -Value Connect-JumpLin -Description 'ssh az jumplin vm' 
 # Fun phrase to display 
 Write-Host "`nReticulating Splines..." -ForegroundColor Yellow
 
+# Set prompt user@device + pwd (truncated)
 function prompt { 
-    (Write-Host "$(($env:USERNAME).ToLower())@$(($env:COMPUTERNAME).ToLower()) " -ForegroundColor Green -nonewline) + `
-    (Write-Host "$((Get-Location).Path)> " -ForegroundColor Yellow -nonewline)
+    "$(Write-Host "$(($env:USERNAME).ToLower())@$(($env:COMPUTERNAME).ToLower()) " -ForegroundColor Green -nonewline)" + `
+    "$(Write-Host $("{0}\+\{1}>" -f (Split-Path -Qualifier (Get-Location)), (Split-Path -Leaf (Get-Location))) -nonewline)"
 }
 
 # Set the console title 
