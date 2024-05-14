@@ -196,7 +196,7 @@ Write-Host "`nReticulating Splines..." -ForegroundColor Yellow
 # Set prompt user@device + pwd (truncated)
 function prompt { 
     "$(Write-Host "$(($env:USERNAME).ToLower())@$(($env:COMPUTERNAME).ToLower()) " -ForegroundColor Green -nonewline)" + `
-    "$(Write-Host $("{0}\+\{1}>" -f (Split-Path -Qualifier (Get-Location)), (Split-Path -Leaf (Get-Location))) -nonewline)"
+    "$(Write-Host $("{0}\$([char]0x221E)\{1}>" -f (Split-Path -Qualifier (Get-Location)), (Split-Path -Leaf (Get-Location))) -nonewline)"
 }
 
 # Set the console title 
