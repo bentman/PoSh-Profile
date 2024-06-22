@@ -132,45 +132,40 @@ function Open-GitOnline { Start-Process "${env:ProgramFiles(x86)}\Microsoft\Edge
 Set-Alias -Name gme -Value Open-GitOnline -Description 'gme - open online git repo' -ea 0
 
 ##### Linux style functions (written like a tux :-)) #####
+
+# awk - Function to process a pattern with an action in a file
+function Select-PatternReplace ([string]$p, [string]$a, [string]$f) {
+  if (!(Test-Path $f)) { Write-Error "File not found: $f"; return }
+  $c = gc $f; foreach ($l in $c) { if ($l -match $p) { iex ($a -replace '\$', '$l') } }
+}
+Set-Alias -Name awk -Value Select-PatternReplace -Description 'awk - process $pattern with $action in $file' -ea 0
+
 # grep - Function to find a pattern in the input
-function Find-Pattern ([string]$p, [string]$i, [string]$r) {
-    if (!(Test-Path $i)) { Write-Error "Input path not found: $i"; return }; $item = gi $i
-    if ($item -is [System.IO.FileInfo]) { cat $i | sls $p } 
-    elseif ($item -is [System.IO.DirectoryInfo]) { gi $i -File -Recurse:$r | % { cat $_.FullName | sls $p } } 
-    else { Write-Error "Unsupported input type: $i" } 
+function Find-Pattern ([string]$p, [string]$i, [switch]$r) {
+  if (!(Test-Path $i)) { Write-Error "Input path not found: $i"; return }; $item = gi $i; 
+  if ($item -is [System.IO.FileInfo]) { cat $i | sls $p | % { "$($i):$($_.LineNumber): $_" } } 
+  elseif ($item -is [System.IO.DirectoryInfo]) { gi $i -File -Recurse:$r | % { cat $_.FullName | sls $p | % { "$($_.Path):$($_.LineNumber): $_" } } } 
+  else { Write-Error "Unsupported input type: $i" } 
 }
 Set-Alias -Name grep -Value Find-Pattern -Description 'grep - find $pattern from $input' -ea 0
+
+# sed - Function to replace a pattern in a file
+function Set-Pattern ([string]$f, [string]$p, [string]$r) {
+  if (!(Test-Path $f)) { Write-Error "File not found: $f"; return }
+  (gc $f) -replace $p, $r | sc $f
+}
+Set-Alias -Name sed -Value Set-Pattern -Description 'sed - replace $pattern in $file with $replace' -ea 0
 
 # touch - Function to create a new file if it does not exist
 function New-File ($f) { if (!(Test-Path $f)) { ni -Path $f -ItemType File -Force } }
 Set-Alias -Name touch -Value New-File -Description 'touch - if not $file, create here' -ea 0
 
-# sed - Function to replace a pattern in a file
-function Set-Pattern ([string]$f, [string]$p, [string]$r) {
-    if (!(Test-Path $f)) { Write-Error "File not found: $f"; return }
-    (gc $f).Replace($p, $r) | sc $f
-}
-Set-Alias -Name sed -Value Set-Pattern -Description 'sed - $replace a $pattern in $file' -ea 0
-
 # unzip - Function to expand a zip file to a folder
 function Expand-ZipToFolder ([string]$zf, [string]$zfd) {
-    if (!$zfd) { $zi = gi $zf; $zfd = ni -Path "$($PWD.Path)\$($zi.BaseName)" -ItemType Directory -Force }
-    else { $zfd = ni -Path $zfd -ItemType Directory -Force }; Expand-Archive -Path $zf -DestinationPath $zfd -Verbose 
+  if (!$zfd) { $zi = gi $zf; $zfd = ni -Path "$($PWD.Path)\$($zi.BaseName)" -ItemType Directory -Force }
+  else { $zfd = ni -Path $zfd -ItemType Directory -Force }; Expand-Archive -Path $zf -DestinationPath $zfd -Verbose 
 }
 Set-Alias -Name unzip -Value Expand-ZipToFolder -Description 'unzip - $zipFile to $zipFolder' -ea 0
-
-##### VSCode Functions #####
-# ops - Function to open all PowerShell files (*.ps1) in current path using VSCode
-function Open-Ps1Files { Get-ChildItem -Path . -Filter *.ps1 | ForEach-Object { code $_.FullName } }
-Set-Alias -Name ops -Value Open-Ps1Files -Description 'ops - open *.ps1 in vscode' -ea 0
-
-# tfv - Function to open all Terraform Variable files (*.tfvars) in current path using VSCode
-function Open-TerraVars { Get-ChildItem -Path . -Include *.tfvars -Recurse | ForEach-Object { code $_.FullName } }
-Set-Alias -Name tfv -Value Open-TerraVars -Description 'tfv - open *.tfvars in vscode' -ea 0
-
-# tff - Function to open all Terraform files (*.tf,*.tfvars) in current path using VSCode
-function Open-TerraFiles { Get-ChildItem -Path .\*.tf | ForEach-Object { code $_.FullName } }
-Set-Alias -Name tff -Value Open-TerraFiles -Description 'tff - open *.tf in vscode' -ea 0
 
 ##### Azure Functions ##### 
 # myaz - Function to use az cli to connect to tenant
