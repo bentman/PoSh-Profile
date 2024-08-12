@@ -14,7 +14,7 @@ It is not "static" and gets customized for each work environment purpose.
 
 - Windows Modern PowerShell (`pwsh.exe`): `$env:OneDrive\Docments\PowerShell\profile.ps1`
 - Windows PowerShell (`powershell.exe`): `$env:OneDrive\Docments\WindowsPowerShell\profile.ps1`
-- Linux Modern PowerShell (`pwsh`): `~/.config/powershell/profile.ps1` (...stay tuned for update!)
+- Linux Modern PowerShell (`pwsh`): `~/.config/powershell/profile.ps1`
 - Helpful command to find appropriate $PROFILE location: `$PROFILE | Format-List * -Force`
 
 ## Contributions
