@@ -8,7 +8,7 @@
 
 .DECLARATIONS
     - Local Environment:
-        $whoIsMe: Contains the username retrieved from whoami.exe.
+        $whoIsMe: Contains the username retrieved from native posh/pwsh.
         $poShProfile: Path to the PowerShell profile for all hosts.
         $localDrives: Lists all local drives, excluding temporary and 'Temp' drives.
         $workFldr: Searches or creates a 'WORK' directory on available drives.
@@ -51,7 +51,7 @@
 #>
 ########## DECLARATION ##########
 ##### Local Environment #####
-$whoIsMe = whoami.exe
+$whoIsMe = "$($env:userdomain.ToLower())" + '\' + "$($env:username.ToLower())"
 $poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
 $localDrives = Get-PSDrive -PSProvider 'FileSystem' | Where-Object { $_.DisplayRoot -eq $null -and $_.Name -ne 'Temp' }
 $workFldr = ($localDrives | ForEach-Object { Get-ChildItem "$($_.Root)" -Filter 'WORK' -Directory -ea 0 }).FullName
