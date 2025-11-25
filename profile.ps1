@@ -49,6 +49,9 @@
 .NOTES
     Ensure to replace placeholder values in cloud and internet environment variables with actual data.
 #>
+##### VSCode Shell Integration #####
+if ($env:TERM_PROGRAM -eq "vscode") { . "$(code --locate-shell-integration-path pwsh)" }
+
 ########## DECLARATION ##########
 ##### Local Environment #####
 $whoIsMe = "$($env:userdomain.ToLower())" + '\' + "$($env:username.ToLower())"
@@ -94,7 +97,7 @@ Set-Alias -Name rdp -Value Start-RDP -Description 'rdp computer/server' -ea 0
 
 # recycle - Function to move file to recycle bin
 function Move-ToRecycleBin ($fileName) { 
-    if (!(Get-Module Recycle)) { Install-Module Recycle; Import-Module Recycle }; Remove-ItemSafely -Path "$fileName" 
+  if (!(Get-Module Recycle)) { Install-Module Recycle; Import-Module Recycle }; Remove-ItemSafely -Path "$fileName" 
 }
 Set-Alias -Name recycle -Value Move-ToRecycleBin -Description "move file to recycle bin" -ea 0
 
@@ -104,18 +107,38 @@ Set-Alias -Name clrtmp -Value Clear-OldTemp -Description 'remove $env:TEMP items
 
 # myip - Function to display public IP addresses
 function Get-PublicIp {
-    # Retrieve public IP addresses
-    $pubIp4 = Invoke-RestMethod -Uri ('https://ipinfo.io/')
-    $pubIp6 = (Invoke-WebRequest http://ifconfig.me/ip).Content
-    Write-Host "`n  Public IP4: $($pubIp4.ip) `n  Public IP6: $($pubIp6)`n" -ForegroundColor Magenta
+  # Retrieve public IP addresses
+  $pubIp4 = (Invoke-WebRequest 'https://ipv4.icanhazip.com').Content
+  $pubIp6 = (Invoke-WebRequest 'https://icanhazip.com').Content
+  Write-Host "`n  Public IP4: $($pubIp4)  Public IP6: $($pubIp6)" -ForegroundColor Magenta
 }
 Set-Alias -Name mypip -Value Get-PublicIp -Description 'what is my public ip?' -ea 0
+
+function Copy-FolderWithProgress {
+  [CmdletBinding()]param([Parameter(Mandatory)][string]$Source, [Parameter(Mandatory)][string]$Destination)
+  if (!(Test-Path $Source)) { throw "Source path '$Source' does not exist" }
+  if (!(Test-Path $Destination)) { New-Item -ItemType Directory -Path $Destination | Out-Null }
+  $files = Get-ChildItem $Source -Recurse -File
+  if ($files.Count -eq 0) { Write-Warning "No files found in source directory"; return }
+  $total = $files.Count; $i = 0
+  foreach ($f in $files) {
+    $i++
+    $t = Join-Path $Destination $f.FullName.Substring($Source.Length).TrimStart('\', '/')
+    $d = Split-Path $t -Parent
+    if (!(Test-Path $d)) { New-Item $d -ItemType Directory | Out-Null }
+    Copy-Item $f.FullName $t -Force
+    Write-Progress -Activity "Copying Files" -Status "$i/$total" -PercentComplete (($i / $total) * 100) -CurrentOperation "Copying $($f.Name)"
+    if ($i -eq $total) { Write-Progress -Activity "Copying Files" -Completed }
+  }
+  return
+}
+Set-Alias -Name cfp -Value Copy-FolderWithProgress -Description 'copy folder w progress' -ea 0
 
 ##### Git functions #####
 # repo - Function to navigate to or create and navigate to the git repositories folder
 function Find-GitRepo {
-    if (-not (Test-Path $gitRepos -ea 0)) { New-Item -Path "$gitRepos" -ItemType Directory -Force }
-    Push-Location -Path $gitRepos
+  if (-not (Test-Path $gitRepos -ea 0)) { New-Item -Path "$gitRepos" -ItemType Directory -Force }
+  Push-Location -Path $gitRepos
 }
 Set-Alias -Name repo -Value Find-GitRepo -Description "if not repo, create, goto repo" -ea 0
 
@@ -198,21 +221,21 @@ function prompt {
 $amIAdmin = [bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups -match "S-1-5-32-544")
 $Host.UI.RawUI.WindowTitle = if ($amIAdmin) { "Administrator: $whoIsMe" } else { "$whoIsMe" }
 
-# Display aliases and paths for quick reference
-(Get-Alias | Where-Object { $_.Description } | Format-Table Name, Definition, Description -AutoSize -HideTableHeaders | Out-String).trim()
-
-# Who am I? & am I running as admin?
-Write-Host "`nWho am I?" -ForegroundColor Yellow
-Write-Host "    $whoIsMe" -ForegroundColor Green
-Write-Host "    Running as admin?... $($amIAdmin)" 
-
-# Is my stuff here?
-Write-Host "`nWhere is my stuff?" -ForegroundColor Yellow
-Write-Host "    $(Test-Path $workFldr)... $workFldr"
-Write-Host "    $(Test-Path $gitRepos)... $gitRepos"
-Write-Host "    $(Test-Path $poShProfile.FullName)... $($poShProfile.FullName)"
-
-Find-Work
+if (!(($env:TERM_PROGRAM -eq "vscode") -or ($env:PSModulePath -eq "WarpTerminal"))) { 
+  # Display aliases and paths for quick reference
+  (Get-Alias | Where-Object { $_.Description } | Format-Table Name, Definition, Description -AutoSize -HideTableHeaders | Out-String).trim()
+  # Who am I? & am I running as admin?
+  Write-Host "`nWho am I?" -ForegroundColor Yellow
+  Write-Host "    $whoIsMe" -ForegroundColor Green
+  Write-Host "    Running as admin?... $($amIAdmin)" 
+  # Is my stuff here?
+  Write-Host "`nWhere is my stuff?" -ForegroundColor Yellow
+  Write-Host "    $(Test-Path $workFldr)... $workFldr"
+  Write-Host "    $(Test-Path $gitRepos)... $gitRepos"
+  Write-Host "    $(Test-Path $poShProfile.FullName)... $($poShProfile.FullName)"
+  # Go to work folder
+  Find-Work 
+}
 
 ###########################################
 ##### $PROFILE | Format-List * -Force #####
