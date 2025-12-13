@@ -73,21 +73,20 @@ $codeFldr = "$workFldr\CODE"; if (-not (Test-Path $codeFldr)) { New-Item -Path "
 $jarvFldr = ($localDrives | ForEach-Object { Get-ChildItem "$($_.Root)" -Filter 'JARVIS' -Directory -ea 0 }).FullName
 
 ##### Internet Environment #####
-$gitName = 'bentman' # GitHub Name
+$gitName = 'gitusername' # GitHub Name
 $gitOnline = "https://GitHub.com/$($gitName)?tab=repositories" # GitHub Repository
 $gitRepos = "$codeFldr\GitHub\$($gitName)\Repositories" # Local GitHub Workspace
 if (-not (Test-Path $gitRepos)) { New-Item -Path "$gitRepos" -ItemType Directory -Force }
 $gitProfile = "$gitRepos\PoSh-Profile\profile.ps1" # PoshProfile on GitHub Repository
 
 ##### Cloud Environment #####
-$myAzTenant = '< YourTenantId >'
-$myAzSub = '< YourSubscriptionId >'
-$jumpWinAdmin = '< YourAdminId >'
-$winSshKey = "$env:OneDrive\.ssh\ssh-jumpwin.pem" # Your SSH Private-Key
-$jumpWin = "$jumpWinAdmin.< YourRegion >.cloudapp.azure.com"
-$jumpLinAdmin = '< YourAdminId >'
-$linSshKey = "$env:OneDrive\.ssh\ssh-jumplin.pem" # Your SSH Private-Key
-$jumpLin = "$jumpLinAdmin.< YourRegion >.cloudapp.azure.com"
+$myAzTenant = 'b32514e3-d308-4e48-af55-624905e74d8a'
+$myAzSub = '18c6a6e1-bd51-4605-839f-78fe85f6461d'
+$jumpAdmin = 'bentl'
+$jumpWin = 'tacocat007.southcentralus.cloudapp.azure.com'
+$winSshKey = "$env:OneDrive\Backup\.ssh\tacocat007_bentl.pem"
+$jumpLin = 'tacocat008.southcentralus.cloudapp.azure.com'
+$linSshKey = "$env:OneDrive\Backup\.ssh\tacocat008_bentl.pem"
 
 ##########  FUNCTIONS  ##########
 # jarv - Function to navigate to JARVIS folder
@@ -268,7 +267,7 @@ Write-Host "`nReticulating Splines..." -ForegroundColor Yellow
 # AGGREGATE CHECK: Should we load the "Lightweight" profile?
 if ($isVscode -or $isClineAgent -or $isGeminiCode -or $isWarpTerminal -or $isChildOfVscode -or $isNonInteractive) {
   # Load VS Code's Shell Integration script for better terminal features.
-  $(code --locate-shell-integration-path pwsh)    
+  if (($isVscode -or $isChildOfVscode) -and -not $isNonInteractive) { . "$(code --locate-shell-integration-path pwsh)" }
   # MINIMAL PROFILE (Safe for Cline / Background Exec)
   $ProgressPreference = 'SilentlyContinue' # Prevents progress bars from bloating Cline tokens
   $env:PAGER = "cat"                       # Stops Cline from getting stuck in a 'less' pager
