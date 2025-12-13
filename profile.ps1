@@ -49,13 +49,20 @@
 .NOTES
     Ensure to replace placeholder values in cloud and internet environment variables with actual data.
 #>
-##### VSCode Shell Integration #####
-$IsVscodeUI = $env:TERM_PROGRAM -eq "vscode"
-$IsClineAgent = $env:CLINE_ACTIVE -eq "true" # Cline sets this in recent versions
-$IsNonInteractive = [bool]([Environment]::GetCommandLineArgs() -like "*-Command*")
-if ($IsVscodeUI) { . "$(code --locate-shell-integration-path pwsh)" }
 
-########## DECLARATION ##########
+# VS Code Terminal check
+$isVscode = ($env:TERM_PROGRAM -eq "vscode")
+# Cline Agent specific checks (Directly identifies Cline)
+$isClineAgent = ($env:CLINE_ACTIVE -eq "true") -or ($null -ne $env:CLINE_VERSION)
+# Gemini Agent specific checks (Directly identifies Gemini)
+$isGeminiCode = ($env:GEMINI_CLI -eq "true")
+# Warp Agent specific checks (Directly identifies Warp)
+$isWarpTerminal = ($env:TERM_PROGRAM -eq "WarpTerminal")
+# Process Parent check (Detects if spawned by VS Code/Cline even if env vars are stripped)
+$isChildOfVscode = (Get-Process -Id $PID).Parent.ProcessName -match "Code|cline"
+# Non-Interactive/Command Mode (Bypass for 'powershell -command' calls)
+$isNonInteractive = [bool]([Environment]::GetCommandLineArgs() -match "-Command|-EncodedCommand|-File")
+
 ##### Local Environment #####
 $whoIsMe = "$($env:userdomain.ToLower())" + '\' + "$($env:username.ToLower())"
 $poShProfile = Get-Item -Path $PROFILE.CurrentUserAllHosts # Powershell Profile
@@ -63,9 +70,10 @@ $localDrives = Get-PSDrive -PSProvider 'FileSystem' | Where-Object { $_.DisplayR
 $workFldr = ($localDrives | ForEach-Object { Get-ChildItem "$($_.Root)" -Filter 'WORK' -Directory -ea 0 }).FullName
 if ($null -eq $workFldr) { New-Item -Path "$env:SystemDrive\WORK" -ItemType Directory -Force }
 $codeFldr = "$workFldr\CODE"; if (-not (Test-Path $codeFldr)) { New-Item -Path "$codeFldr" -ItemType Directory -Force }
+$jarvFldr = ($localDrives | ForEach-Object { Get-ChildItem "$($_.Root)" -Filter 'JARVIS' -Directory -ea 0 }).FullName
 
 ##### Internet Environment #####
-$gitName = '< gitusername >' # GitHub Name
+$gitName = 'bentman' # GitHub Name
 $gitOnline = "https://GitHub.com/$($gitName)?tab=repositories" # GitHub Repository
 $gitRepos = "$codeFldr\GitHub\$($gitName)\Repositories" # Local GitHub Workspace
 if (-not (Test-Path $gitRepos)) { New-Item -Path "$gitRepos" -ItemType Directory -Force }
@@ -82,6 +90,10 @@ $linSshKey = "$env:OneDrive\.ssh\ssh-jumplin.pem" # Your SSH Private-Key
 $jumpLin = "$jumpLinAdmin.< YourRegion >.cloudapp.azure.com"
 
 ##########  FUNCTIONS  ##########
+# jarv - Function to navigate to JARVIS folder
+function Find-Jarv { Push-Location -Path $jarvFldr }
+Set-Alias -Name jarv -Value Find-Jarv -Description 'goto $jarvFldr' -ea 0
+
 # work - Function to navigate to work folder
 function Find-Work { Push-Location -Path $workFldr }
 Set-Alias -Name work -Value Find-Work -Description 'goto $workFldr' -ea 0
@@ -253,6 +265,18 @@ Set-Alias -Name jumplin -Value Connect-JumpLin -Description 'ssh az jumplin vm' 
 # Fun phrase to display 
 Write-Host "`nReticulating Splines..." -ForegroundColor Yellow
 
+# AGGREGATE CHECK: Should we load the "Lightweight" profile?
+if ($isVscode -or $isClineAgent -or $isGeminiCode -or $isWarpTerminal -or $isChildOfVscode -or $isNonInteractive) {
+  # Load VS Code's Shell Integration script for better terminal features.
+  $(code --locate-shell-integration-path pwsh)    
+  # MINIMAL PROFILE (Safe for Cline / Background Exec)
+  $ProgressPreference = 'SilentlyContinue' # Prevents progress bars from bloating Cline tokens
+  $env:PAGER = "cat"                       # Stops Cline from getting stuck in a 'less' pager
+  # Only load essential aliases, skip all UI/Themes
+  function Prompt { "PS $($ExecutionContext.SessionState.Path.CurrentLocation)> " }
+  return # EXIT profile early so heavy modules never load
+}
+
 # Set prompt user@device + pwd (truncated)
 function prompt { 
   "$(Write-Host "$(($env:USERNAME).ToLower())@$(($env:COMPUTERNAME).ToLower()) " -ForegroundColor Green -nonewline)" + `
@@ -263,21 +287,19 @@ function prompt {
 $amIAdmin = [bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups -match "S-1-5-32-544")
 $Host.UI.RawUI.WindowTitle = if ($amIAdmin) { "Administrator: $whoIsMe" } else { "$whoIsMe" }
 
-if (!($IsVscodeUI -or $IsClineAgent -or $IsNonInteractive) -or ($env:PSModulePath -eq "WarpTerminal")) { 
-  # Display aliases and paths for quick reference
-  (Get-Alias | Where-Object { $_.Description } | Format-Table Name, Definition, Description -AutoSize -HideTableHeaders | Out-String).trim()
-  # Who am I? & am I running as admin?
-  Write-Host "`nWho am I?" -ForegroundColor Yellow
-  Write-Host "    $whoIsMe" -ForegroundColor Green
-  Write-Host "    Running as admin?... $($amIAdmin)" 
-  # Is my stuff here?
-  Write-Host "`nWhere is my stuff?" -ForegroundColor Yellow
-  Write-Host "    $(Test-Path $workFldr)... $workFldr"
-  Write-Host "    $(Test-Path $gitRepos)... $gitRepos"
-  Write-Host "    $(Test-Path $poShProfile.FullName)... $($poShProfile.FullName)"
-  # Go to work folder
-  Find-Work 
-}
+# Display aliases and paths for quick reference
+(Get-Alias | Where-Object { $_.Description } | Format-Table Name, Definition, Description -AutoSize -HideTableHeaders | Out-String).trim()
+# Who am I? & am I running as admin?
+Write-Host "`nWho am I?" -ForegroundColor Yellow
+Write-Host "    $whoIsMe" -ForegroundColor Green
+Write-Host "    Running as admin?... $($amIAdmin)" 
+# Is my stuff here?
+Write-Host "`nWhere is my stuff?" -ForegroundColor Yellow
+Write-Host "    $(Test-Path $workFldr)... $workFldr"
+Write-Host "    $(Test-Path $gitRepos)... $gitRepos"
+Write-Host "    $(Test-Path $poShProfile.FullName)... $($poShProfile.FullName)"
+# Go to work folder
+Find-Work 
 
 ###########################################
 ##### $PROFILE | Format-List * -Force #####
