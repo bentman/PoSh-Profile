@@ -73,20 +73,21 @@ $codeFldr = "$workFldr\CODE"; if (-not (Test-Path $codeFldr)) { New-Item -Path "
 $jarvFldr = ($localDrives | ForEach-Object { Get-ChildItem "$($_.Root)" -Filter 'JARVIS' -Directory -ea 0 }).FullName
 
 ##### Internet Environment #####
-$gitName = 'gitusername' # GitHub Name
+$gitName = '< gitusername >' # GitHub User Name
 $gitOnline = "https://GitHub.com/$($gitName)?tab=repositories" # GitHub Repository
 $gitRepos = "$codeFldr\GitHub\$($gitName)\Repositories" # Local GitHub Workspace
 if (-not (Test-Path $gitRepos)) { New-Item -Path "$gitRepos" -ItemType Directory -Force }
 $gitProfile = "$gitRepos\PoSh-Profile\profile.ps1" # PoshProfile on GitHub Repository
 
 ##### Cloud Environment #####
-$myAzTenant = 'b32514e3-d308-4e48-af55-624905e74d8a'
-$myAzSub = '18c6a6e1-bd51-4605-839f-78fe85f6461d'
-$jumpAdmin = 'bentl'
-$jumpWin = 'tacocat007.southcentralus.cloudapp.azure.com'
-$winSshKey = "$env:OneDrive\Backup\.ssh\tacocat007_bentl.pem"
-$jumpLin = 'tacocat008.southcentralus.cloudapp.azure.com'
-$linSshKey = "$env:OneDrive\Backup\.ssh\tacocat008_bentl.pem"
+$myAzTenant = '< YourTenantId >'
+$myAzSub = '< YourSubscriptionId >'
+$jumpWinAdmin = '< YourAdminId >'
+$winSshKey = "$env:OneDrive\.ssh\ssh-jumpwin.pem" # Your SSH Private-Key
+$jumpWin = "$jumpWinAdmin.< YourRegion >.cloudapp.azure.com"
+$jumpLinAdmin = '< YourAdminId >'
+$linSshKey = "$env:OneDrive\.ssh\ssh-jumplin.pem" # Your SSH Private-Key
+$jumpLin = "$jumpLinAdmin.< YourRegion >.cloudapp.azure.com"
 
 ##########  FUNCTIONS  ##########
 # jarv - Function to navigate to JARVIS folder
@@ -111,7 +112,7 @@ Set-Alias -Name rdp -Value Start-RDP -Description 'rdp computer/server' -ea 0
 
 # recycle - Function to move file to recycle bin
 function Move-ToRecycleBin ($fileName) { 
-  if (!(Get-Module Recycle)) { Install-Module Recycle; Import-Module Recycle }; Remove-ItemSafely -Path "$fileName" 
+    if (!(Get-Module Recycle)) { Install-Module Recycle; Import-Module Recycle }; Remove-ItemSafely -Path "$fileName" 
 }
 Set-Alias -Name recycle -Value Move-ToRecycleBin -Description "move file to recycle bin" -ea 0
 
@@ -121,55 +122,55 @@ Set-Alias -Name clrtmp -Value Clear-OldTemp -Description 'remove $env:TEMP items
 
 # mywinget - Function to display installed apps via winget
 function Get-MyWingetApps {
-  $apps = winget list --accept-source-agreements |
-  Select-String "^\S" | ForEach-Object {
-    $cols = ($_ -split '\s{2,}')  # split on 2+ spaces
-    [PSCustomObject]@{
-      Name    = $cols[0]
-      Id      = $cols[1]
-      Version = $cols[2]
-      Source  = if ($cols.Count -ge 4) { $cols[3] } else { "" }
+    $apps = winget list --accept-source-agreements |
+    Select-String "^\S" | ForEach-Object {
+        $cols = ($_ -split '\s{2,}')  # split on 2+ spaces
+        [PSCustomObject]@{
+            Name    = $cols[0]
+            Id      = $cols[1]
+            Version = $cols[2]
+            Source  = if ($cols.Count -ge 4) { $cols[3] } else { "" }
+        }
     }
-  }
-  $userApps = $apps | Where-Object { $_.Source -eq "winget" -and ($_.Name -notmatch "^(Microsoft|VC|Visual C\+\+|Windows|DirectX)") }
-  $userApps | Sort-Object Name | Format-Table -AutoSize Name, Id, Version, Source
+    $userApps = $apps | Where-Object { $_.Source -eq "winget" -and ($_.Name -notmatch "^(Microsoft|VC|Visual C\+\+|Windows|DirectX)") }
+    $userApps | Sort-Object Name | Format-Table -AutoSize Name, Id, Version, Source
 }
 Set-Alias -Name mywinget -Value Get-MyWingetApps -Description 'list apps installed via winget' -ea 0
 
 # myip - Function to display public IP addresses
 function Get-PublicIp {
-  # Retrieve public IP addresses
-  $pubIp4 = (Invoke-WebRequest 'https://ipv4.icanhazip.com').Content
-  $pubIp6 = (Invoke-WebRequest 'https://icanhazip.com').Content
-  Write-Host "`n  Public IP4: $($pubIp4)  Public IP6: $($pubIp6)" -ForegroundColor Magenta
+    # Retrieve public IP addresses
+    $pubIp4 = (Invoke-WebRequest 'https://ipv4.icanhazip.com').Content
+    $pubIp6 = (Invoke-WebRequest 'https://icanhazip.com').Content
+    Write-Host "`n  Public IP4: $($pubIp4)  Public IP6: $($pubIp6)" -ForegroundColor Magenta
 }
 Set-Alias -Name mypip -Value Get-PublicIp -Description 'what is my public ip?' -ea 0
 
 function Copy-FolderWithProgress {
-  [CmdletBinding()]param([Parameter(Mandatory)][string]$Source, [Parameter(Mandatory)][string]$Destination)
-  if (!(Test-Path $Source)) { throw "Source path '$Source' does not exist" }
-  if (!(Test-Path $Destination)) { New-Item -ItemType Directory -Path $Destination | Out-Null }
-  $files = Get-ChildItem $Source -Recurse -File
-  if ($files.Count -eq 0) { Write-Warning "No files found in source directory"; return }
-  $total = $files.Count; $i = 0
-  foreach ($f in $files) {
-    $i++
-    $t = Join-Path $Destination $f.FullName.Substring($Source.Length).TrimStart('\', '/')
-    $d = Split-Path $t -Parent
-    if (!(Test-Path $d)) { New-Item $d -ItemType Directory | Out-Null }
-    Copy-Item $f.FullName $t -Force
-    Write-Progress -Activity "Copying Files" -Status "$i/$total" -PercentComplete (($i / $total) * 100) -CurrentOperation "Copying $($f.Name)"
-    if ($i -eq $total) { Write-Progress -Activity "Copying Files" -Completed }
-  }
-  return
+    [CmdletBinding()]param([Parameter(Mandatory)][string]$Source, [Parameter(Mandatory)][string]$Destination)
+    if (!(Test-Path $Source)) { throw "Source path '$Source' does not exist" }
+    if (!(Test-Path $Destination)) { New-Item -ItemType Directory -Path $Destination | Out-Null }
+    $files = Get-ChildItem $Source -Recurse -File
+    if ($files.Count -eq 0) { Write-Warning "No files found in source directory"; return }
+    $total = $files.Count; $i = 0
+    foreach ($f in $files) {
+        $i++
+        $t = Join-Path $Destination $f.FullName.Substring($Source.Length).TrimStart('\', '/')
+        $d = Split-Path $t -Parent
+        if (!(Test-Path $d)) { New-Item $d -ItemType Directory | Out-Null }
+        Copy-Item $f.FullName $t -Force
+        Write-Progress -Activity "Copying Files" -Status "$i/$total" -PercentComplete (($i / $total) * 100) -CurrentOperation "Copying $($f.Name)"
+        if ($i -eq $total) { Write-Progress -Activity "Copying Files" -Completed }
+    }
+    return
 }
 Set-Alias -Name cfp -Value Copy-FolderWithProgress -Description 'copy folder w progress' -ea 0
 
 ##### Git functions #####
 # repo - Function to navigate to or create and navigate to the git repositories folder
 function Find-GitRepo {
-  if (-not (Test-Path $gitRepos -ea 0)) { New-Item -Path "$gitRepos" -ItemType Directory -Force }
-  Push-Location -Path $gitRepos
+    if (-not (Test-Path $gitRepos -ea 0)) { New-Item -Path "$gitRepos" -ItemType Directory -Force }
+    Push-Location -Path $gitRepos
 }
 Set-Alias -Name repo -Value Find-GitRepo -Description "if not repo, create, goto repo" -ea 0
 
@@ -189,24 +190,24 @@ Set-Alias -Name gme -Value Open-GitOnline -Description 'gme - open online git re
 
 # awk - Function to process a pattern with an action in a file
 function Select-PatternReplace ([string]$p, [string]$a, [string]$f) {
-  if (!(Test-Path $f)) { Write-Error "File not found: $f"; return }
-  $c = gc $f; foreach ($l in $c) { if ($l -match $p) { iex ($a -replace '\$', '$l') } }
+    if (!(Test-Path $f)) { Write-Error "File not found: $f"; return }
+    $c = gc $f; foreach ($l in $c) { if ($l -match $p) { iex ($a -replace '\$', '$l') } }
 }
 Set-Alias -Name awk -Value Select-PatternReplace -Description 'awk - process $pattern with $action in $file' -ea 0
 
 # grep - Function to find a pattern in the input
 function Find-Pattern ([string]$p, [string]$i, [switch]$r) {
-  if (!(Test-Path $i)) { Write-Error "Input path not found: $i"; return }; $item = gi $i; 
-  if ($item -is [System.IO.FileInfo]) { cat $i | sls $p | % { "$($i):$($_.LineNumber): $_" } } 
-  elseif ($item -is [System.IO.DirectoryInfo]) { gi $i -File -Recurse:$r | % { cat $_.FullName | sls $p | % { "$($_.Path):$($_.LineNumber): $_" } } } 
-  else { Write-Error "Unsupported input type: $i" } 
+    if (!(Test-Path $i)) { Write-Error "Input path not found: $i"; return }; $item = gi $i; 
+    if ($item -is [System.IO.FileInfo]) { cat $i | sls $p | % { "$($i):$($_.LineNumber): $_" } } 
+    elseif ($item -is [System.IO.DirectoryInfo]) { gi $i -File -Recurse:$r | % { cat $_.FullName | sls $p | % { "$($_.Path):$($_.LineNumber): $_" } } } 
+    else { Write-Error "Unsupported input type: $i" } 
 }
 Set-Alias -Name grep -Value Find-Pattern -Description 'grep - find $pattern from $input' -ea 0
 
 # sed - Function to replace a pattern in a file
 function Set-Pattern ([string]$f, [string]$p, [string]$r) {
-  if (!(Test-Path $f)) { Write-Error "File not found: $f"; return }
-  (gc $f) -replace $p, $r | sc $f
+    if (!(Test-Path $f)) { Write-Error "File not found: $f"; return }
+    (gc $f) -replace $p, $r | sc $f
 }
 Set-Alias -Name sed -Value Set-Pattern -Description 'sed - replace $pattern in $file with $replace' -ea 0
 
@@ -216,8 +217,8 @@ Set-Alias -Name touch -Value New-File -Description 'touch - if not $file, create
 
 # unzip - Function to expand a zip file to a folder
 function Expand-ZipToFolder ([string]$zf, [string]$zfd) {
-  if (!$zfd) { $zi = gi $zf; $zfd = ni -Path "$($PWD.Path)\$($zi.BaseName)" -ItemType Directory -Force }
-  else { $zfd = ni -Path $zfd -ItemType Directory -Force }; Expand-Archive -Path $zf -DestinationPath $zfd -Verbose 
+    if (!$zfd) { $zi = gi $zf; $zfd = ni -Path "$($PWD.Path)\$($zi.BaseName)" -ItemType Directory -Force }
+    else { $zfd = ni -Path $zfd -ItemType Directory -Force }; Expand-Archive -Path $zf -DestinationPath $zfd -Verbose 
 }
 Set-Alias -Name unzip -Value Expand-ZipToFolder -Description 'unzip - $zipFile to $zipFolder' -ea 0
 
@@ -236,10 +237,10 @@ Set-Alias -Name tff -Value Open-TerraFiles -Description 'tff - open *.tf in vsco
 
 # clrtf - Function to clear Terraform init, lock, & state files in current path (aka reset TF)
 function Clear-Terraform {
-  Remove-Item .\.terraform\ -Recurse -Force
-  Remove-Item .\.terraform.lock.hcl -Force
-  Remove-Item .\terraform.tfstate*
-  Get-ChildItem
+    Remove-Item .\.terraform\ -Recurse -Force
+    Remove-Item .\.terraform.lock.hcl -Force
+    Remove-Item .\terraform.tfstate*
+    Get-ChildItem
 }
 Set-Alias -Name clrtf -Value Clear-Terraform -Description 'clears terraform init, lock, & state' -ea 0
 
@@ -266,20 +267,20 @@ Write-Host "`nReticulating Splines..." -ForegroundColor Yellow
 
 # AGGREGATE CHECK: Should we load the "Lightweight" profile?
 if ($isVscode -or $isClineAgent -or $isGeminiCode -or $isWarpTerminal -or $isChildOfVscode -or $isNonInteractive) {
-  # Load VS Code's Shell Integration script for better terminal features.
-  if (($isVscode -or $isChildOfVscode) -and -not $isNonInteractive) { . "$(code --locate-shell-integration-path pwsh)" }
-  # MINIMAL PROFILE (Safe for Cline / Background Exec)
-  $ProgressPreference = 'SilentlyContinue' # Prevents progress bars from bloating Cline tokens
-  $env:PAGER = "cat"                       # Stops Cline from getting stuck in a 'less' pager
-  # Only load essential aliases, skip all UI/Themes
-  function Prompt { "PS $($ExecutionContext.SessionState.Path.CurrentLocation)> " }
-  return # EXIT profile early so heavy modules never load
+    # Load VS Code's Shell Integration script for better terminal features.
+    if (($isVscode -or $isChildOfVscode) -and -not $isNonInteractive) { . "$(code --locate-shell-integration-path pwsh)" }
+    # MINIMAL PROFILE (Safe for Cline / Background Exec)
+    $ProgressPreference = 'SilentlyContinue' # Prevents progress bars from bloating Cline tokens
+    $env:PAGER = "cat"                       # Stops Cline from getting stuck in a 'less' pager
+    # Only load essential aliases, skip all UI/Themes
+    function Prompt { "PS $($ExecutionContext.SessionState.Path.CurrentLocation)> " }
+    return # EXIT profile early so heavy modules never load
 }
 
 # Set prompt user@device + pwd (truncated)
 function prompt { 
-  "$(Write-Host "$(($env:USERNAME).ToLower())@$(($env:COMPUTERNAME).ToLower()) " -ForegroundColor Green -nonewline)" + `
-    "$(Write-Host $("{0}\$([char]0x221E)\{1}>" -f (Split-Path -Qualifier (Get-Location)), (Split-Path -Leaf (Get-Location))) -nonewline)"
+    "$(Write-Host "$(($env:USERNAME).ToLower())@$(($env:COMPUTERNAME).ToLower()) " -ForegroundColor Green -nonewline)" + `
+        "$(Write-Host $("{0}\$([char]0x221E)\{1}>" -f (Split-Path -Qualifier (Get-Location)), (Split-Path -Leaf (Get-Location))) -nonewline)"
 }
 
 # Set the console title 
@@ -308,25 +309,25 @@ Find-Work
 #### More functions than really needed ####
 ###########################################
 function Compare-DnsResolution ([string]$DomainName) {
-  # Local DNS resolution
-  try { $localResult = Resolve-DnsName $DomainName; Write-Host "Local DNS Resolution for $($DomainName): $($localResult.IPAddress.split(' '))" }
-  catch { Write-Host "Local DNS Resolution Failed for $DomainName" }
-  # DNS resolution using external servers
-  $dnsServers = @("1.1.1.1", "8.8.8.8")
-  foreach ($server in $dnsServers) {
-    try { $externalResult = Resolve-DnsName $DomainName -Server $server; Write-Host "DNS Resolution using $($server) for $($DomainName): $($externalResult.IPAddress.split(' '))" } 
-    catch { Write-Host "DNS Resolution Failed using server $server for $DomainName" }
-  }
+    # Local DNS resolution
+    try { $localResult = Resolve-DnsName $DomainName; Write-Host "Local DNS Resolution for $($DomainName): $($localResult.IPAddress.split(' '))" }
+    catch { Write-Host "Local DNS Resolution Failed for $DomainName" }
+    # DNS resolution using external servers
+    $dnsServers = @("1.1.1.1", "8.8.8.8")
+    foreach ($server in $dnsServers) {
+        try { $externalResult = Resolve-DnsName $DomainName -Server $server; Write-Host "DNS Resolution using $($server) for $($DomainName): $($externalResult.IPAddress.split(' '))" } 
+        catch { Write-Host "DNS Resolution Failed using server $server for $DomainName" }
+    }
 }
 Set-Alias -Name dnschk -Value Compare-DnsResolution -Description 'check dhcp dns vs nslookup' -ea 0
 
 function New-TerraformModule ([string]$moduleName) {
-  # Check if the module path already exists
-  if (Test-Path ".\modules\$moduleName") { Write-Host "Module path '$moduleName' already exists :-(" -ForegroundColor Red; return }
-  # Create the directory structure
-  New-Item -ItemType Directory -Path ".\modules\$moduleName\" -Force
-  # Define the file contents
-  $dataContent = @"
+    # Check if the module path already exists
+    if (Test-Path ".\modules\$moduleName") { Write-Host "Module path '$moduleName' already exists :-(" -ForegroundColor Red; return }
+    # Create the directory structure
+    New-Item -ItemType Directory -Path ".\modules\$moduleName\" -Force
+    # Define the file contents
+    $dataContent = @"
 # .\modules\$moduleName\data.tf
 #################### DATA ####################
 # Data source for a single resource group by name
@@ -334,7 +335,7 @@ data "azurerm_resource_group" "example" {
   name = var.resource_group_name
 }
 "@
-  $localsContent = @"
+    $localsContent = @"
 # .\modules\$moduleName\locals.tf
 #################### LOCALS ####################
 # Local to retrieve the location of the resource group
@@ -342,7 +343,7 @@ locals {
   rg_location = data.azurerm_resource_group.example.location
 }
 "@
-  $mainContent = @"
+    $mainContent = @"
 # .\modules\$moduleName\main.tf
 #################### MAIN ####################
 # Resource block for an example Azure module
@@ -352,7 +353,7 @@ resource "azurerm_module" "example" {
   tags                = var.labtags
 }
 "@
-  $variablesContent = @"
+    $variablesContent = @"
 # .\modules\$moduleName\variables.tf
 #################### VARIABLES ####################
 variable "resource_group_name" {
@@ -376,7 +377,7 @@ variable "labtags" {
   }
 }
 "@
-  $readmeContent = @"
+    $readmeContent = @"
 # .\modules\$moduleName\readme.md
 This module deploys resources in Azure.
 
@@ -395,19 +396,19 @@ module "example" {
 - **location** - Azure region.
 - **labtags** - Tags to apply.
 "@
-  # File creation list
-  $files = @("data.tf", "locals.tf", "main.tf", "variables.tf", "README.md")
-  # Loop through each file to create and populate with corresponding content
-  foreach ($file in $files) {
-    $filePath = Join-Path ".\modules\$moduleName" $file
-    $contentVariable = "$($file -replace '.{3}$')Content"
-    # Check if the content variable exists, otherwise set it to empty
-    if (Get-Variable -Name $contentVariable -ErrorAction SilentlyContinue) { $content = (Get-Variable -Name $contentVariable).Value }
-    else { $content = "" }
-    # Create the file and write the content
-    New-Item -ItemType File -Path $filePath -Force
-    Set-Content -Path $filePath -Value $content
-  }
-  Write-Host "Terraform module structure created at '.\modules\$moduleName\' :-)" -ForegroundColor Green
+    # File creation list
+    $files = @("data.tf", "locals.tf", "main.tf", "variables.tf", "README.md")
+    # Loop through each file to create and populate with corresponding content
+    foreach ($file in $files) {
+        $filePath = Join-Path ".\modules\$moduleName" $file
+        $contentVariable = "$($file -replace '.{3}$')Content"
+        # Check if the content variable exists, otherwise set it to empty
+        if (Get-Variable -Name $contentVariable -ErrorAction SilentlyContinue) { $content = (Get-Variable -Name $contentVariable).Value }
+        else { $content = "" }
+        # Create the file and write the content
+        New-Item -ItemType File -Path $filePath -Force
+        Set-Content -Path $filePath -Value $content
+    }
+    Write-Host "Terraform module structure created at '.\modules\$moduleName\' :-)" -ForegroundColor Green
 }
 Set-Alias -Name tfm -Value New-TerraformModule -Description 'create a new terraform child module by $moduleName' -ea 0
