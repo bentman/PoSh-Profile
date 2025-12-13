@@ -50,7 +50,10 @@
     Ensure to replace placeholder values in cloud and internet environment variables with actual data.
 #>
 ##### VSCode Shell Integration #####
-if ($env:TERM_PROGRAM -eq "vscode") { . "$(code --locate-shell-integration-path pwsh)" }
+$IsVscodeUI = $env:TERM_PROGRAM -eq "vscode"
+$IsClineAgent = $env:CLINE_ACTIVE -eq "true" # Cline sets this in recent versions
+$IsNonInteractive = [bool]([Environment]::GetCommandLineArgs() -like "*-Command*")
+if ($IsVscodeUI) { . "$(code --locate-shell-integration-path pwsh)" }
 
 ########## DECLARATION ##########
 ##### Local Environment #####
@@ -62,7 +65,7 @@ if ($null -eq $workFldr) { New-Item -Path "$env:SystemDrive\WORK" -ItemType Dire
 $codeFldr = "$workFldr\CODE"; if (-not (Test-Path $codeFldr)) { New-Item -Path "$codeFldr" -ItemType Directory -Force }
 
 ##### Internet Environment #####
-$gitName = 'bentman' # GitHub Name
+$gitName = '< gitusername >' # GitHub Name
 $gitOnline = "https://GitHub.com/$($gitName)?tab=repositories" # GitHub Repository
 $gitRepos = "$codeFldr\GitHub\$($gitName)\Repositories" # Local GitHub Workspace
 if (-not (Test-Path $gitRepos)) { New-Item -Path "$gitRepos" -ItemType Directory -Force }
@@ -104,6 +107,23 @@ Set-Alias -Name recycle -Value Move-ToRecycleBin -Description "move file to recy
 # clrtmp - Function to remove $env:TEMP items older than 7 days
 function Clear-OldTemp { Get-ChildItem "$env:TEMP\*" -Recurse | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-7) } | Remove-Item -Recurse -Verbose }
 Set-Alias -Name clrtmp -Value Clear-OldTemp -Description 'remove $env:TEMP items older 7 days' -ea 0
+
+# mywinget - Function to display installed apps via winget
+function Get-MyWingetApps {
+  $apps = winget list --accept-source-agreements |
+  Select-String "^\S" | ForEach-Object {
+    $cols = ($_ -split '\s{2,}')  # split on 2+ spaces
+    [PSCustomObject]@{
+      Name    = $cols[0]
+      Id      = $cols[1]
+      Version = $cols[2]
+      Source  = if ($cols.Count -ge 4) { $cols[3] } else { "" }
+    }
+  }
+  $userApps = $apps | Where-Object { $_.Source -eq "winget" -and ($_.Name -notmatch "^(Microsoft|VC|Visual C\+\+|Windows|DirectX)") }
+  $userApps | Sort-Object Name | Format-Table -AutoSize Name, Id, Version, Source
+}
+Set-Alias -Name mywinget -Value Get-MyWingetApps -Description 'list apps installed via winget' -ea 0
 
 # myip - Function to display public IP addresses
 function Get-PublicIp {
@@ -190,6 +210,28 @@ function Expand-ZipToFolder ([string]$zf, [string]$zfd) {
 }
 Set-Alias -Name unzip -Value Expand-ZipToFolder -Description 'unzip - $zipFile to $zipFolder' -ea 0
 
+##### VSCode Functions #####
+# ops - Function to open all PowerShell files (*.ps1) in current path using VSCode
+function Open-Ps1Files { Get-ChildItem -Path . -Filter *.ps1 | ForEach-Object { code $_.FullName } }
+Set-Alias -Name ops -Value Open-Ps1Files -Description 'ops - open *.ps1 in vscode' -ea 0
+
+# tfv - Function to open all Terraform Variable files (*.tfvars) in current path using VSCode
+function Open-TerraVars { Get-ChildItem -Path . -Include *.tfvars -Recurse | ForEach-Object { code $_.FullName } }
+Set-Alias -Name tfv -Value Open-TerraVars -Description 'tfv - open *.tfvars in vscode' -ea 0
+
+# tff - Function to open all Terraform files (*.tf,*.tfvars) in current path using VSCode
+function Open-TerraFiles { Get-ChildItem -Path .\*.tf | ForEach-Object { code $_.FullName } }
+Set-Alias -Name tff -Value Open-TerraFiles -Description 'tff - open *.tf in vscode' -ea 0
+
+# clrtf - Function to clear Terraform init, lock, & state files in current path (aka reset TF)
+function Clear-Terraform {
+  Remove-Item .\.terraform\ -Recurse -Force
+  Remove-Item .\.terraform.lock.hcl -Force
+  Remove-Item .\terraform.tfstate*
+  Get-ChildItem
+}
+Set-Alias -Name clrtf -Value Clear-Terraform -Description 'clears terraform init, lock, & state' -ea 0
+
 ##### Azure Functions ##### 
 # myaz - Function to use az cli to connect to tenant
 function Connect-Azure { az login -t $myAzTenant }
@@ -213,7 +255,7 @@ Write-Host "`nReticulating Splines..." -ForegroundColor Yellow
 
 # Set prompt user@device + pwd (truncated)
 function prompt { 
-    "$(Write-Host "$(($env:USERNAME).ToLower())@$(($env:COMPUTERNAME).ToLower()) " -ForegroundColor Green -nonewline)" + `
+  "$(Write-Host "$(($env:USERNAME).ToLower())@$(($env:COMPUTERNAME).ToLower()) " -ForegroundColor Green -nonewline)" + `
     "$(Write-Host $("{0}\$([char]0x221E)\{1}>" -f (Split-Path -Qualifier (Get-Location)), (Split-Path -Leaf (Get-Location))) -nonewline)"
 }
 
@@ -221,7 +263,7 @@ function prompt {
 $amIAdmin = [bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups -match "S-1-5-32-544")
 $Host.UI.RawUI.WindowTitle = if ($amIAdmin) { "Administrator: $whoIsMe" } else { "$whoIsMe" }
 
-if (!(($env:TERM_PROGRAM -eq "vscode") -or ($env:PSModulePath -eq "WarpTerminal"))) { 
+if (!($IsVscodeUI -or $IsClineAgent -or $IsNonInteractive) -or ($env:PSModulePath -eq "WarpTerminal")) { 
   # Display aliases and paths for quick reference
   (Get-Alias | Where-Object { $_.Description } | Format-Table Name, Definition, Description -AutoSize -HideTableHeaders | Out-String).trim()
   # Who am I? & am I running as admin?
@@ -245,14 +287,106 @@ if (!(($env:TERM_PROGRAM -eq "vscode") -or ($env:PSModulePath -eq "WarpTerminal"
 #### More functions than really needed ####
 ###########################################
 function Compare-DnsResolution ([string]$DomainName) {
-    # Local DNS resolution
-    try { $localResult = Resolve-DnsName $DomainName; Write-Host "Local DNS Resolution for $($DomainName): $($localResult.IPAddress.split(' '))" }
-    catch { Write-Host "Local DNS Resolution Failed for $DomainName" }
-    # DNS resolution using external servers
-    $dnsServers = @("1.1.1.1", "8.8.8.8")
-    foreach ($server in $dnsServers) {
-        try { $externalResult = Resolve-DnsName $DomainName -Server $server; Write-Host "DNS Resolution using $($server) for $($DomainName): $($externalResult.IPAddress.split(' '))" } 
-        catch { Write-Host "DNS Resolution Failed using server $server for $DomainName" }
-    }
+  # Local DNS resolution
+  try { $localResult = Resolve-DnsName $DomainName; Write-Host "Local DNS Resolution for $($DomainName): $($localResult.IPAddress.split(' '))" }
+  catch { Write-Host "Local DNS Resolution Failed for $DomainName" }
+  # DNS resolution using external servers
+  $dnsServers = @("1.1.1.1", "8.8.8.8")
+  foreach ($server in $dnsServers) {
+    try { $externalResult = Resolve-DnsName $DomainName -Server $server; Write-Host "DNS Resolution using $($server) for $($DomainName): $($externalResult.IPAddress.split(' '))" } 
+    catch { Write-Host "DNS Resolution Failed using server $server for $DomainName" }
+  }
 }
 Set-Alias -Name dnschk -Value Compare-DnsResolution -Description 'check dhcp dns vs nslookup' -ea 0
+
+function New-TerraformModule ([string]$moduleName) {
+  # Check if the module path already exists
+  if (Test-Path ".\modules\$moduleName") { Write-Host "Module path '$moduleName' already exists :-(" -ForegroundColor Red; return }
+  # Create the directory structure
+  New-Item -ItemType Directory -Path ".\modules\$moduleName\" -Force
+  # Define the file contents
+  $dataContent = @"
+# .\modules\$moduleName\data.tf
+#################### DATA ####################
+# Data source for a single resource group by name
+data "azurerm_resource_group" "example" {
+  name = var.resource_group_name
+}
+"@
+  $localsContent = @"
+# .\modules\$moduleName\locals.tf
+#################### LOCALS ####################
+# Local to retrieve the location of the resource group
+locals {
+  rg_location = data.azurerm_resource_group.example.location
+}
+"@
+  $mainContent = @"
+# .\modules\$moduleName\main.tf
+#################### MAIN ####################
+# Resource block for an example Azure module
+resource "azurerm_module" "example" {
+  name                = var.resource_group_name
+  location            = var.location
+  tags                = var.labtags
+}
+"@
+  $variablesContent = @"
+# .\modules\$moduleName\variables.tf
+#################### VARIABLES ####################
+variable "resource_group_name" {
+  description = "Name of the resource group"
+  type        = string
+  default     = "rg-learninglab"
+}
+
+variable "location" {
+  description = "Region where resources are created"
+  type        = string
+  default     = "eastus2"
+}
+
+variable "labtags" {
+  type = map(string)
+  default = {
+    "source"      = "terraform"
+    "project"     = "learning"
+    "environment" = "lab"
+  }
+}
+"@
+  $readmeContent = @"
+# .\modules\$moduleName\readme.md
+This module deploys resources in Azure.
+
+## Usage
+```
+module "example" {
+  source              = "./modules/$moduleName"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  tags                = var.labtags
+}
+```
+
+## Variables
+- **resource_group_name** - Name of the resource group.
+- **location** - Azure region.
+- **labtags** - Tags to apply.
+"@
+  # File creation list
+  $files = @("data.tf", "locals.tf", "main.tf", "variables.tf", "README.md")
+  # Loop through each file to create and populate with corresponding content
+  foreach ($file in $files) {
+    $filePath = Join-Path ".\modules\$moduleName" $file
+    $contentVariable = "$($file -replace '.{3}$')Content"
+    # Check if the content variable exists, otherwise set it to empty
+    if (Get-Variable -Name $contentVariable -ErrorAction SilentlyContinue) { $content = (Get-Variable -Name $contentVariable).Value }
+    else { $content = "" }
+    # Create the file and write the content
+    New-Item -ItemType File -Path $filePath -Force
+    Set-Content -Path $filePath -Value $content
+  }
+  Write-Host "Terraform module structure created at '.\modules\$moduleName\' :-)" -ForegroundColor Green
+}
+Set-Alias -Name tfm -Value New-TerraformModule -Description 'create a new terraform child module by $moduleName' -ea 0
