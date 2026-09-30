@@ -52,13 +52,21 @@
 
 # VS Code Terminal check
 $isVscode = ($env:TERM_PROGRAM -eq "vscode")
-# Cline Agent specific checks (Directly identifies Cline)
+# Antigravity specific checks (Directly identifies Antigravity)
+$isAntigravity = (($null -ne $env:AGY_BROWSER_ACTIVE_PORT_FILE) -or ($null -ne $env:AGY_BROWSER_WS_URL))
+# Claude Agent specific checks (Directly identifies Claude)
+$isClaude = ($env:TERM_PROGRAM -eq "claude") -or ($env:TERM_PROGRAM -eq "claude-desktop")
+# Codex Agent specific checks (Directly identifies Codex)
+$isCodex = ($env:TERM_PROGRAM -eq "codex") -or ((Get-Process -Id $PID).Parent.ProcessName -match "^(codex|ChatGPT)$")
+# Gemini Agent specific checks (Directly identifies Gemini)
 $isClineAgent = ($env:CLINE_ACTIVE -eq "true") -or ($null -ne $env:CLINE_VERSION)
 # Gemini Agent specific checks (Directly identifies Gemini)
 $isGeminiCode = ($env:GEMINI_CLI -eq "true")
 # Warp Agent specific checks (Directly identifies Warp)
 $isWarpTerminal = ($env:TERM_PROGRAM -eq "WarpTerminal")
-# Process Parent check (Detects if spawned by VS Code/Cline even if env vars are stripped)
+# Zed Terminal check
+$isZed = ($env:TERM_PROGRAM -eq "zed")
+# ChildOfVscode specific checks (Directly identifies ChildOfVscode)
 $isChildOfVscode = (Get-Process -Id $PID).Parent.ProcessName -match "Code|cline"
 # Non-Interactive/Command Mode (Bypass for 'powershell -command' calls)
 $isNonInteractive = [bool]([Environment]::GetCommandLineArgs() -match "-Command|-EncodedCommand|-File")
@@ -266,7 +274,7 @@ Set-Alias -Name jumplin -Value Connect-JumpLin -Description 'ssh az jumplin vm' 
 Write-Host "`nReticulating Splines..." -ForegroundColor Yellow
 
 # AGGREGATE CHECK: Should we load the "Lightweight" profile?
-if ($isVscode -or $isClineAgent -or $isGeminiCode -or $isWarpTerminal -or $isChildOfVscode -or $isNonInteractive) {
+if ($isVscode -or $isAntigravity -or $isClineAgent -or $isGeminiCode -or $isWarpTerminal -or $isChildOfVscode -or $isZed -or $isNonInteractive) {
     # Load VS Code's Shell Integration script for better terminal features.
     if (($isVscode -or $isChildOfVscode) -and -not $isNonInteractive) { . "$(code --locate-shell-integration-path pwsh)" }
     # MINIMAL PROFILE (Safe for Cline / Background Exec)
